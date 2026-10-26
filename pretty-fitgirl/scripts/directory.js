@@ -44,11 +44,14 @@
     };
     async function pump() {
       while (active && running < 3 && pending.length) {
-        const { card, url, frame } = pending.shift(); running++;
+        const { card, url, frame, title } = pending.shift(); running++;
         (async () => {
           try {
-            const src = await imageFor(url);
-            if (!active || !src) return;
+            MFGRepack.showSpinner(frame);
+            let src = "";
+            try { src = await imageFor(url); } catch { src = ""; }
+            if (!active) return;
+            if (!src) { MFGRepack.loadSteamCover(frame, title); return; }
             const image = document.createElement("img"); image.src = src; image.alt = ""; image.loading = "lazy"; image.decoding = "async";
             const onOrigLoad = () => {
               MFGRepack.hideSpinner(frame);
@@ -59,7 +62,7 @@
             } else {
               image.addEventListener("load", onOrigLoad, { once: true });
             }
-            image.addEventListener("error", () => image.remove(), { once: true });
+            image.addEventListener("error", () => { image.remove(); if (active) MFGRepack.loadSteamCover(frame, title); }, { once: true });
             frame.append(image); card.dataset.artwork = "loaded";
           } catch { /* Leave the consistent placeholder when the source is unavailable. */ }
           finally { running--; pump(); }
@@ -80,7 +83,7 @@
       const heading = document.createElement("h2"); heading.className = "mfg-directory-title";
       link.before(heading); heading.append(link); item.prepend(frame);
       const originalTitle = link.getAttribute("title"); link.title = link.textContent.trim();
-      item.mfgArtwork = { card: item, url: link.href, frame }; observer.observe(item);
+      item.mfgArtwork = { card: item, url: link.href, frame, title: link.textContent.trim() }; observer.observe(item);
       changes.push(() => {
         heading.before(link); heading.remove(); frame.remove(); delete item.dataset.artwork; delete item.mfgArtwork;
         originalClass === null ? item.removeAttribute("class") : item.setAttribute("class", originalClass);
