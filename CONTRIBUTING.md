@@ -102,7 +102,7 @@ scripts/                # Build and packaging utilities
 1. Create a feature branch: `git checkout -b feature/your-feature-name` or `fix/issue-description`.
 2. Commit your changes with clear, descriptive commit messages.
 3. Push to your fork: `git push origin feature/your-feature-name`.
-4. Open a Pull Request against the `main` branch of `pretty-fitgirl/pretty-fitgirl`.
+4. Open a Pull Request against the `main` branch of `MuhammedZohaib/pretty-fitgirl`.
 5. Fill out the PR template with a summary of changes, motivation, and verification steps.
 
 ---

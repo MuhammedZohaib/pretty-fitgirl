@@ -1,13 +1,30 @@
 # Pretty FitGirl
 
-[![CI](https://github.com/pretty-fitgirl/pretty-fitgirl/actions/workflows/ci.yml/badge.svg)](https://github.com/pretty-fitgirl/pretty-fitgirl/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/pretty-fitgirl/pretty-fitgirl?include_prereleases&style=flat-square)](https://github.com/pretty-fitgirl/pretty-fitgirl/releases)
+[![CI](https://github.com/MuhammedZohaib/pretty-fitgirl/actions/workflows/ci.yml/badge.svg)](https://github.com/MuhammedZohaib/pretty-fitgirl/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/MuhammedZohaib/pretty-fitgirl?include_prereleases&style=flat-square)](https://github.com/MuhammedZohaib/pretty-fitgirl/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-success.svg?style=flat-square)](pretty-fitgirl/manifest.json)
 
 > **Pretty FitGirl** is an unofficial, minimal, distraction-free dark theme and user experience enhancement browser extension for [FitGirl Repacks](https://fitgirl-repacks.site/).
 
 Crafted for speed, legibility, and privacy. Zero tracking, zero build steps, and 100% client-side.
+
+---
+
+## 📸 Preview
+
+![Pretty FitGirl Preview](docs/images/preview.png)
+
+<details>
+<summary>🔍 <strong>More Screenshots (Game Details & A–Z Directory)</strong></summary>
+
+### Game Detail View
+![Game Details View](docs/images/detail-preview.png)
+
+### A–Z Directory with Cover Cards
+![A-Z Directory View](docs/images/az-preview.png)
+
+</details>
 
 ---
 
@@ -27,7 +44,7 @@ Crafted for speed, legibility, and privacy. Zero tracking, zero build steps, and
 
 ### Option 1: Pre-built Release (Recommended)
 
-1. Download the latest `pretty-fitgirl-vX.Y.Z.zip` from [GitHub Releases](https://github.com/pretty-fitgirl/pretty-fitgirl/releases).
+1. Download the latest `pretty-fitgirl-vX.Y.Z.zip` from [GitHub Releases](https://github.com/MuhammedZohaib/pretty-fitgirl/releases).
 2. Extract the ZIP archive to a folder on your computer.
 3. Open your Chromium-based browser (Chrome, Edge, Brave, Opera, Vivaldi):
    - In Chrome / Brave: navigate to `chrome://extensions`
@@ -39,7 +56,7 @@ Crafted for speed, legibility, and privacy. Zero tracking, zero build steps, and
 ### Option 2: From Source
 
 ```bash
-git clone https://github.com/pretty-fitgirl/pretty-fitgirl.git
+git clone https://github.com/MuhammedZohaib/pretty-fitgirl.git
 cd pretty-fitgirl
 ```
 
@@ -77,6 +94,9 @@ npm test
 
 # Build distribution ZIP archives
 npm run pack
+
+# Capture fresh README preview screenshots
+node scripts/capture-readme-images.cjs
 ```
 
 ---
