@@ -826,6 +826,107 @@
       }
       panelDl.append(directWrap, torrentWrap);
 
+      // Add Download .txt button adjacent to each direct download filehoster
+      const hosterItems = directWrap.querySelectorAll("ul > li");
+      const cleanGame = (MFGRepack.gameName ? MFGRepack.gameName(gameTitle) : gameTitle) || "Repack";
+      const baseTitle = cleanGame.split(/\s*[-–—]\s*(?:v\d|Build|\+\s*All|\+\s*\d)/i)[0].trim();
+      const safeGame = (baseTitle || cleanGame).replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim();
+
+      for (const li of hosterItems) {
+        const urls = [];
+        const seen = new Set();
+        let spoiler = li.querySelector(".su-spoiler");
+        if (!spoiler && li.nextElementSibling?.matches(".su-spoiler")) {
+          spoiler = li.nextElementSibling;
+        }
+
+        const spoilerLinks = (spoiler || li).querySelectorAll(".su-spoiler-content a[href]");
+        if (spoilerLinks.length > 0) {
+          for (const a of spoilerLinks) {
+            const h = (a.href || a.getAttribute("href") || "").replace(/&amp;/g, "&").trim();
+            if (h && /^https?:\/\//i.test(h) && !seen.has(h)) {
+              seen.add(h);
+              urls.push(h);
+            }
+          }
+        } else {
+          const allLinks = li.querySelectorAll("a[href]");
+          for (const a of allLinks) {
+            const h = (a.href || a.getAttribute("href") || "").replace(/&amp;/g, "&").trim();
+            if (!h || !/^https?:\/\//i.test(h) || seen.has(h)) continue;
+            if (/internetdownloadmanager\.com|jdownloader\.org|paste\.fitgirl|fitgirl-repacks\.site\/\?/i.test(h)) continue;
+            seen.add(h);
+            urls.push(h);
+          }
+        }
+
+        if (urls.length === 0) continue;
+
+        // Extract clean filehoster name
+        const text = li.textContent || "";
+        const hosterMatch = text.match(/Filehoster:\s*([^(\n\r<\[]+)/i);
+        let hosterName = hosterMatch ? hosterMatch[1].trim() : "";
+        if (!hosterName) {
+          const firstA = li.querySelector("a[href]");
+          if (firstA && firstA.textContent) {
+            hosterName = firstA.textContent.replace(/^Filehoster:\s*/i, "").trim();
+          }
+        }
+        if (!hosterName) hosterName = "DirectLinks";
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "mfg-export-txt-btn";
+        btn.setAttribute("aria-label", `Download ${urls.length} URLs for ${hosterName} as text file`);
+        btn.title = `Extract and download all ${urls.length} URLs for ${hosterName} as a .txt file`;
+
+        const iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+        const checkSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+        btn.innerHTML = `${iconSvg}<span>Download .txt (${urls.length})</span>`;
+
+        let resetTimer = null;
+        btn.addEventListener("click", e => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const safeHost = hosterName.replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim();
+          const filename = `${safeGame} - ${safeHost} - urls.txt`;
+
+          const content = urls.join("\r\n") + "\r\n";
+          const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+          const blobUrl = URL.createObjectURL(blob);
+          const dlLink = document.createElement("a");
+          dlLink.href = blobUrl;
+          dlLink.download = filename;
+          dlLink.style.display = "none";
+          document.body.appendChild(dlLink);
+          dlLink.click();
+          setTimeout(() => {
+            dlLink.remove();
+            URL.revokeObjectURL(blobUrl);
+          }, 1000);
+
+          btn.classList.add("mfg-btn-success");
+          btn.innerHTML = `${checkSvg}<span>✓ Saved (${urls.length})</span>`;
+          if (resetTimer) clearTimeout(resetTimer);
+          resetTimer = setTimeout(() => {
+            btn.classList.remove("mfg-btn-success");
+            btn.innerHTML = `${iconSvg}<span>Download .txt (${urls.length})</span>`;
+          }, 2500);
+        });
+
+        if (li.contains(spoiler)) {
+          spoiler.before(btn);
+        } else {
+          li.append(btn);
+        }
+        changes.push(() => {
+          if (resetTimer) clearTimeout(resetTimer);
+          btn.remove();
+        });
+      }
+
       const filterSources = src => {
         btnAll.setAttribute("aria-pressed", String(src === "all"));
         btnDirect.setAttribute("aria-pressed", String(src === "direct"));
@@ -981,5 +1082,5 @@
     }
   }
 
-  globalThis.MFGRepack = { metadata, placeholder, cover, summary, enhanceDetail, searchName, gameName, resolveImages, showSpinner, hideSpinner, setSourceBadge, headerToPoster };
+  globalThis.MFGRepack = { metadata, placeholder, cover, summary, enhanceDetail, searchName, gameName, resolveImages, showSpinner, hideSpinner, setSourceBadge, headerToPoster, loadSteamCover };
 })();
