@@ -1,4 +1,4 @@
-:is(html.mfg-on, html:not(.mfg-off)) {
+html.mfg-on {
   color-scheme: dark;
   background-color: #000000;
 
@@ -94,7 +94,7 @@
   --mfg-reading-width: 82ch;
 }
 
-:is(html.mfg-on, html:not(.mfg-off))[data-mfg-density="compact"] {
+html.mfg-on[data-mfg-density="compact"] {
   --mfg-row-gap: 1rem;
   --mfg-space: .875rem;
 }

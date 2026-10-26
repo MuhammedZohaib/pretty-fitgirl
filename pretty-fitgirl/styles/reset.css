@@ -1,8 +1,8 @@
-:is(html.mfg-on, html:not(.mfg-off)) { background: var(--mfg-bg, #000000); color-scheme: dark; scroll-padding-top: calc(var(--mfg-header-height) + 1.5rem); }
-:is(html.mfg-on, html:not(.mfg-off)) body { background: var(--mfg-bg, #000000); color: var(--mfg-text, #ededed); font: 400 0.875rem/1.5 var(--mfg-font); letter-spacing: 0; }
-:is(html.mfg-on, html:not(.mfg-off)) #page, :is(html.mfg-on, html:not(.mfg-off)) #page * { box-sizing: border-box; }
-:is(html.mfg-on, html:not(.mfg-off)) #page { background: var(--mfg-bg, #000000); max-width: none; margin: 0; }
-:is(html.mfg-on, html:not(.mfg-off)) #page::before { content: none; }
+html.mfg-on { background: var(--mfg-bg, #000000); color-scheme: dark; scroll-padding-top: calc(var(--mfg-header-height) + 1.5rem); }
+html.mfg-on body { background: var(--mfg-bg, #000000); color: var(--mfg-text, #ededed); font: 400 0.875rem/1.5 var(--mfg-font); letter-spacing: 0; }
+html.mfg-on #page, html.mfg-on #page * { box-sizing: border-box; }
+html.mfg-on #page { background: var(--mfg-bg, #000000); max-width: none; margin: 0; }
+html.mfg-on #page::before { content: none; }
 html.mfg-on #page a { color: var(--geist-link); text-decoration: none; overflow-wrap: anywhere; }
 html.mfg-on #page a:hover { color: var(--geist-link-soft); }
 html.mfg-on #page :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--geist-link); outline-offset: 2px; }
@@ -18,6 +18,6 @@ html.mfg-on #page code { font-family: var(--mfg-mono); font-size: 0.875rem; over
 html.mfg-on #page blockquote { color: var(--geist-body); border-left: 2px solid var(--geist-hairline-strong); padding-left: 1rem; margin: 1rem 0; }
 html.mfg-on #page hr { background: var(--mfg-border); border: 0; height: 1px; margin: 2rem 0; }
 @media (prefers-reduced-motion: reduce) {
-  :is(html.mfg-on, html:not(.mfg-off)) { scroll-behavior: auto; }
-  :is(html.mfg-on, html:not(.mfg-off)) #page *, :is(html.mfg-on, html:not(.mfg-off)) #page *::before, :is(html.mfg-on, html:not(.mfg-off)) #page *::after { transition: none !important; animation: none !important; }
+  html.mfg-on { scroll-behavior: auto; }
+  html.mfg-on #page *, html.mfg-on #page *::before, html.mfg-on #page *::after { transition: none !important; animation: none !important; }
 }

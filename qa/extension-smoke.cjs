@@ -19,11 +19,14 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
     const extensions = await manager.evaluate(() => new Promise(resolve => chrome.developerPrivate.getExtensionsInfo({}, resolve)));
     const installed = extensions.find(item => item.name === 'Pretty FitGirl' || item.name === 'Modern FitGirl');
     assert(installed, 'This browser did not load the unpacked extension');
-    const source = name => fs.readFileSync(path.join(__dirname, `sources/${name}.html`), 'utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+    const source = name => fs.readFileSync(path.join(__dirname, `sources/${name}.html`), 'utf8')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<iframe\b[^>]*youtube[\s\S]*?<\/iframe>/gi, '');
     const fixtures = Object.fromEntries(['home', 'page2', 'detail', 'az', 'az-blud', 'az-drive', 'digests', 'digest', 'updates'].map(name => [name, source(name)]));
     await context.route('https://web.tolstoycomments.com/**', route => {
-      if (route.request().isNavigationRequest()) return route.fulfill({ contentType: 'text/html', body: source('comments-frame') });
-      if (new URL(route.request().url()).pathname.endsWith('.css')) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(path.join(__dirname, 'sources/comments.css')) });
+      const request = route.request();
+      if (request.isNavigationRequest()) return route.fulfill({ contentType: 'text/html', body: source('comments-frame') });
+      if (new URL(request.url()).pathname.endsWith('.css')) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(path.join(__dirname, 'sources/comments.css')) });
       return route.abort();
     });
     const fetches = new Map();
@@ -38,8 +41,13 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
         const name = ({ '/blud/': 'az-blud', '/drive-rally/': 'az-drive' })[url.pathname];
         return route.fulfill({ status: name ? 200 : 404, contentType: 'text/html', body: name ? fixtures[name] : '' });
       }
+      if (request.resourceType() === 'stylesheet') return route.fulfill({ status: 200, contentType: 'text/css', body: '' });
+      if (request.resourceType() === 'image') return route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.alloc(0) });
       return route.abort();
     });
+    await context.route('https://**steamstatic.com/**', route => route.abort());
+    await context.route('https://**youtube**/**', route => route.abort());
+    await context.route('https://**imageban.ru/**', route => route.abort());
     const page = await context.newPage(); const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('https://fitgirl-repacks.site/');

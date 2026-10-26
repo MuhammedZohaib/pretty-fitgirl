@@ -305,6 +305,7 @@
 
   function apply() {
     root.classList.toggle("mfg-on", preferences.enabled);
+    root.classList.toggle("mfg-off", !preferences.enabled);
     if (preferences.enabled) {
       root.dataset.mfgDensity = preferences.density;
       root.dataset.mfgView = preferences.view;

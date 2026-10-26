@@ -1,5 +1,5 @@
 /* Game cards are links to the complete repack page, never inline accordions. */
-:is(html.mfg-on, html:not(.mfg-off)) body:is(.home, .archive) #content article.category-lossless-repack > :is(.entry-content, footer.entry-meta),
+html.mfg-on body:is(.home, .archive) #content article.category-lossless-repack > :is(.entry-content, footer.entry-meta),
 html.mfg-on #page #content .mfg-game > .entry-content,
 html.mfg-on #page #content .mfg-game > footer.entry-meta { display: none; }
 html.mfg-on #content .mfg-game > .entry-header { padding-bottom: .875rem; }
