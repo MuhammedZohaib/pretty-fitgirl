@@ -64,7 +64,7 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
       await page.evaluate(() => {
         const listeners = [];
         const data = {};
-        window.chrome = { runtime: { sendMessage: () => {}, getURL: path => new URL(`/__mfg/${path}`, location.origin).href }, storage: { local: {
+        window.chrome = { runtime: { sendMessage: (msg, cb) => { if (typeof cb === 'function') cb({}); }, getURL: path => new URL(`/__mfg/${path}`, location.origin).href }, storage: { local: {
           get: (key, callback) => { const result = key === null ? { ...data } : { [key]: data[key] }; callback?.(result); return Promise.resolve(result); },
           set: (value, callback) => {
             Object.assign(data, value);
@@ -278,7 +278,7 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
       await page8.addStyleTag({ content: css });
       await page8.evaluate(() => {
         const listeners = [];
-        window.chrome = { runtime: { sendMessage: () => {}, getURL: p => new URL(`/__mfg/${p}`, location.origin).href }, storage: { local: { get: (_, cb) => cb({}), set: (_, cb) => cb() }, onChanged: { addListener: l => listeners.push(l) } } };
+        window.chrome = { runtime: { sendMessage: (msg, cb) => { if (typeof cb === 'function') cb({}); }, getURL: p => new URL(`/__mfg/${p}`, location.origin).href }, storage: { local: { get: (_, cb) => cb({}), set: (_, cb) => cb() }, onChanged: { addListener: l => listeners.push(l) } } };
         window.changePreferences = v => listeners.forEach(l => l({ modernFitGirl: { newValue: v } }, 'local'));
       });
       await page8.addScriptTag({ content: enhancement });

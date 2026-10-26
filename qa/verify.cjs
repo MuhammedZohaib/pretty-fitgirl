@@ -41,6 +41,17 @@ if (manifest.action?.default_popup) {
 }
 
 // 4. Content scripts and styles
+if (manifest.background?.service_worker) {
+  const full = path.join(extDir, manifest.background.service_worker);
+  assert(fs.existsSync(full), `Background service worker exists: ${manifest.background.service_worker}`);
+  try {
+    const code = fs.readFileSync(full, 'utf8');
+    new vm.Script(code, { filename: manifest.background.service_worker });
+    console.log(`  PASS: Syntax valid: ${manifest.background.service_worker}`);
+  } catch (err) {
+    assert(false, `Syntax error in ${manifest.background.service_worker}: ${err.message}`);
+  }
+}
 for (const cs of manifest.content_scripts || []) {
   for (const style of cs.css || []) {
     const full = path.join(extDir, style);

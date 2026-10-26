@@ -7,6 +7,12 @@
   "permissions": [
     "storage"
   ],
+  "host_permissions": [
+    "https://store.steampowered.com/*"
+  ],
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
   "web_accessible_resources": [
     {
       "resources": [

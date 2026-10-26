@@ -142,5 +142,132 @@
     }
     return true;
   }
-  globalThis.MFGExperience = { mount, digest };
+
+  const MAX_UPCOMING_GAMES = 60;
+  const UPCOMING_HEADING_RE = /upcoming\s+repacks/i;
+  const ARROW_RE = /^[\s ]*[→↣⇢➔➜➤➡⮕➝➢]+\s*/;
+
+  function findUpcomingArticle(root) {
+    const titles = root.querySelectorAll('.entry-title, h1, h2, h3');
+    for (const t of titles) {
+      if (UPCOMING_HEADING_RE.test((t.textContent || '').trim())) {
+        const art = t.closest('article');
+        if (art) return art;
+      }
+    }
+    for (const art of root.querySelectorAll('article')) {
+      if (ARROW_RE.test((art.textContent || '').trim())) return art;
+    }
+    return null;
+  }
+
+  function gameSpans(article) {
+    const root = article.querySelector('.entry-content') || article;
+    const spans = [...root.querySelectorAll('span')];
+    let games = spans.filter((s) => ARROW_RE.test(s.textContent || ''));
+    if (!games.length) {
+      games = spans.filter(
+        (s) =>
+          /color/i.test(s.getAttribute('style') || '') &&
+          (s.textContent || '').trim().length > 1
+      );
+    }
+    return games.slice(0, MAX_UPCOMING_GAMES);
+  }
+
+  function youtubeUrl(query) {
+    return (
+      'https://www.youtube.com/results?search_query=' +
+      encodeURIComponent(query) +
+      '&sp=CAMSAhAB'
+    );
+  }
+
+  function decorateUpcomingItem(span, display, image, changes) {
+    if (span.dataset.fgyt) return;
+    span.dataset.fgyt = '1';
+
+    const query = MFGRepack.searchName(display);
+    const a = document.createElement('a');
+    a.href = youtubeUrl(query + ' game');
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.title = 'Most-viewed gameplay video for “' + query + '”';
+
+    const src = image && (image.header || image.tiny);
+    if (src) {
+      a.className = 'fgyt-chip';
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.alt = query;
+      img.src = src;
+      img.addEventListener('error', () => {
+        if (image.tiny && img.src !== image.tiny) {
+          img.src = image.tiny;
+        } else {
+          a.className = 'fgyt-chip fgyt-chip-empty';
+          a.textContent = '▶';
+          img.remove();
+        }
+      });
+      a.appendChild(img);
+    } else {
+      a.className = 'fgyt-chip fgyt-chip-empty';
+      a.textContent = '▶';
+    }
+
+    const row = document.createElement('div');
+    row.className = 'fgyt-row';
+    span.parentNode.insertBefore(row, span);
+    row.appendChild(a);
+    row.appendChild(span);
+
+    let n = row.nextSibling;
+    while (n && n.nodeType === Node.TEXT_NODE && !n.textContent.trim()) n = n.nextSibling;
+    let br = null;
+    if (n && n.nodeName === 'BR') {
+      br = n;
+      n.remove();
+    }
+
+    changes.push(() => {
+      row.before(span);
+      if (br) span.after(br);
+      row.remove();
+      delete span.dataset.fgyt;
+    });
+  }
+
+  function upcoming(content, changes) {
+    const article = findUpcomingArticle(content);
+    if (!article) return false;
+    const spans = gameSpans(article);
+    if (!spans.length) return false;
+
+    article.classList.add('mfg-upcoming-card');
+    changes.push(() => article.classList.remove('mfg-upcoming-card'));
+
+    const items = spans.map((span) => {
+      const display = MFGRepack.gameName(span.textContent);
+      return { span, display, query: MFGRepack.searchName(display) };
+    });
+    const queries = [...new Set(items.map((i) => i.query).filter(Boolean))];
+
+    MFGRepack.resolveImages(queries).then((images) => {
+      if (!document.documentElement.classList.contains('mfg-on')) return;
+      for (const it of items) {
+        decorateUpcomingItem(it.span, it.display, images ? images[it.query] : null, changes);
+      }
+    }).catch(() => {
+      if (!document.documentElement.classList.contains('mfg-on')) return;
+      for (const it of items) {
+        decorateUpcomingItem(it.span, it.display, null, changes);
+      }
+    });
+
+    return true;
+  }
+
+  globalThis.MFGExperience = { mount, digest, upcoming };
 })();

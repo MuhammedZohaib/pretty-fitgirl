@@ -244,3 +244,53 @@ html.mfg-comments-on ::-webkit-scrollbar-thumb:hover {
     transition: none !important;
   }
 }
+
+
+/* In-frame Lightbox for Comment Images */
+.mfg-frame-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(8px);
+  box-sizing: border-box;
+}
+
+.mfg-frame-lightbox.mfg-frame-lightbox-open {
+  display: flex !important;
+}
+
+.mfg-frame-lightbox-img {
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid #333333;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9);
+}
+
+.mfg-frame-lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 140ms;
+}
+
+.mfg-frame-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+}

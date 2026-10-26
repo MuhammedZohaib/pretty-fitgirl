@@ -140,9 +140,14 @@
 
     if (document.body.matches(".single")) {
       const article = content.querySelector("article.category-lossless-repack");
-      if (article) MFGRepack.enhanceDetail(article, changes);
+      if (article) {
+        MFGRepack.enhanceDetail(article, changes);
+      } else {
+        MFGExperience.upcoming(content, changes);
+      }
       return;
     }
+    MFGExperience.upcoming(content, changes);
     if (!document.body.matches(".home, .archive, .search")) return;
 
     const posts = [...content.querySelectorAll(":scope > article.hentry")];

@@ -7,7 +7,8 @@ const { chromium } = require('playwright');
 const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? path.resolve(__dirname, '../pretty-fitgirl') : path.resolve(__dirname, '../modern-fitgirl');
 (async () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json')));
-  assert.equal(manifest.background, undefined, 'Removed library worker still shipped');
+  assert.notEqual(manifest.background?.service_worker, 'scripts/library-worker.js', 'Removed library worker still shipped');
+  assert.equal(manifest.background?.service_worker, 'scripts/background.js', 'Background service worker configured');
   assert(!fs.existsSync(path.join(extension, 'library.html')), 'Removed library page still shipped');
   const context = await chromium.launchPersistentContext(fs.mkdtempSync(path.join(os.tmpdir(), 'pfg-qa-')), {
     executablePath: process.env.MFG_BROWSER || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -46,6 +47,11 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
       return route.abort();
     });
     await context.route('https://**steamstatic.com/**', route => route.abort());
+    await context.route('https://store.steampowered.com/**', route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ total: 1, items: [{ id: 1091500, name: 'Cyberpunk 2077', tiny_image: '' }] })
+    }));
     await context.route('https://**youtube**/**', route => route.abort());
     await context.route('https://**imageban.ru/**', route => route.abort());
     const page = await context.newPage(); const errors = [];

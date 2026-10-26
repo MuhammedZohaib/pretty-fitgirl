@@ -258,3 +258,74 @@ html.mfg-on #content.mfg-digest-page :is(.su-spoiler-content, ol, ul, p) { min-w
   html.mfg-on #content .mfg-digest-heading h1 { font-size: 1.5rem; }
   html.mfg-on #content.mfg-digest-page .su-spoiler-title { font-size: .8125rem; }
 }
+
+/* ==========================================================================
+   Upcoming Repacks Enhancement: Steam Covers & Gameplay Links
+   ========================================================================== */
+
+html.mfg-on .fgyt-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  margin: 0.375rem 0 !important;
+  padding: 0.3125rem 0.5rem !important;
+  border-radius: var(--geist-radius-md) !important;
+  background: transparent !important;
+  transition: background var(--mfg-speed) ease !important;
+}
+
+html.mfg-on .fgyt-row:hover {
+  background: var(--geist-hairline-soft) !important;
+}
+
+html.mfg-on .fgyt-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 52px !important;
+  height: 29px !important;
+  border-radius: var(--geist-radius-sm) !important;
+  overflow: hidden !important;
+  background: var(--geist-canvas-elevated) !important;
+  border: 1px solid var(--mfg-border) !important;
+  text-decoration: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+  transition: transform var(--mfg-speed) ease, border-color var(--mfg-speed) ease, box-shadow var(--mfg-speed) ease !important;
+  cursor: pointer !important;
+}
+
+html.mfg-on .fgyt-chip:hover {
+  transform: scale(1.08) !important;
+  border-color: var(--geist-cyan) !important;
+  box-shadow: 0 2px 10px rgba(0, 223, 162, 0.3) !important;
+}
+
+html.mfg-on .fgyt-chip img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: 0 !important;
+}
+
+html.mfg-on .fgyt-chip.fgyt-chip-empty {
+  font-size: 0.625rem !important;
+  font-weight: 700 !important;
+  color: var(--geist-mute) !important;
+  background: var(--geist-hairline-soft) !important;
+  line-height: 1 !important;
+}
+
+html.mfg-on .fgyt-chip.fgyt-chip-empty:hover {
+  color: var(--geist-cyan) !important;
+}
+
+html.mfg-on .fgyt-row > span {
+  font-family: var(--mfg-font) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: var(--geist-ink) !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.4 !important;
+}
