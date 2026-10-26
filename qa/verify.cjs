@@ -1,3 +1,6 @@
+/**
+ * Static verification of the extension package: loads manifest and scripts (via node:vm) and checks they are consistent. Run before releasing.
+ */
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');

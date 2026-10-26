@@ -1,3 +1,6 @@
+/**
+ * Unit-style check for title cleaning: sample repack titles are reduced to store-search queries (mirrors searchName in scripts/repack.js). Not shipped.
+ */
 const titles = [
   'Knights of Honor II: Sovereign',
   'Mortal Shell II: Rotten Autumn',

@@ -1,9 +1,11 @@
 "use strict";
+// Popup controls. Preferences live in chrome.storage.local under "modernFitGirl" and are picked up live by open tabs via storage.onChanged.
 const enabled = document.getElementById("enabled");
 const view = document.getElementById("view");
 const density = document.getElementById("density");
 const presentation = document.getElementById("presentation");
 const status = document.getElementById("status");
+// Load saved preferences into the form (defaults: enabled, grid, comfortable).
 chrome.storage.local.get("modernFitGirl", (stored) => {
   if (chrome.runtime.lastError) { status.textContent = "Preferences could not be loaded. Reopen this panel to retry."; return; }
   const preferences = stored.modernFitGirl || {};
@@ -12,6 +14,7 @@ chrome.storage.local.get("modernFitGirl", (stored) => {
   density.value = preferences.density === "compact" ? "compact" : "comfortable";
   presentation.disabled = !enabled.checked;
 });
+// Save on every change; no Save button needed.
 for (const control of [enabled, view, density]) {
   control.addEventListener("change", () => {
     presentation.disabled = !enabled.checked;

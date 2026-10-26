@@ -2,6 +2,7 @@
 (() => {
   "use strict";
   if (window.top === window) return;
+  // Only the official site may be styled; this guards against other sites embedding the same widget.
   const supported = "https://fitgirl-repacks.site";
   try {
     const pParam = new URL(location.href).searchParams.get("p");
@@ -10,6 +11,7 @@
     if (pOrigin !== supported && !ancestor) return;
   } catch { return; }
   const root = document.documentElement;
+  // Toggle the dark comments skin from the saved "enabled" preference.
   const apply = value => root.classList.toggle("mfg-comments-on", value?.enabled !== false);
   apply();
   const fonts = document.createElement("style");
@@ -19,6 +21,7 @@
   chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && changes.modernFitGirl) apply(changes.modernFitGirl.newValue); });
 
   // In-frame lightbox fallback
+  // Fallback lightbox rendered inside the iframe when the parent page cannot show one.
   let frameLb = null;
   function getFrameLb() {
     if (frameLb) return frameLb;
@@ -42,9 +45,30 @@
     frameLb.append(close, img);
     document.body.append(frameLb);
 
+    let zoom = 1;
+    const applyZoom = z => {
+      zoom = Math.min(4, Math.max(0.5, Math.round(z * 100) / 100));
+      img.style.transition = "transform 140ms ease-out";
+      img.style.transform = `scale(${zoom})`;
+      img.style.cursor = zoom > 1 ? "zoom-out" : "zoom-in";
+    };
+    img.addEventListener("click", e => { e.stopPropagation(); applyZoom(zoom === 1 ? 2 : 1); });
+    frameLb.addEventListener("wheel", e => {
+      if (!frameLb.classList.contains("mfg-frame-lightbox-open")) return;
+      e.preventDefault();
+      applyZoom(zoom + (e.deltaY < 0 ? 0.25 : -0.25));
+    }, { passive: false });
+    window.addEventListener("keydown", e => {
+      if (!frameLb.classList.contains("mfg-frame-lightbox-open")) return;
+      if (e.key === "+" || e.key === "=") applyZoom(zoom + 0.25);
+      else if (e.key === "-" || e.key === "_") applyZoom(zoom - 0.25);
+      else if (e.key === "0") applyZoom(1);
+    });
+
     const closeLb = () => {
       frameLb.classList.remove("mfg-frame-lightbox-open");
       img.src = "";
+      applyZoom(1);
     };
     close.addEventListener("click", closeLb);
     frameLb.addEventListener("click", e => { if (e.target === frameLb) closeLb(); });
@@ -52,6 +76,7 @@
     return frameLb;
   }
 
+  // Prefer the parent page lightbox (via postMessage, handled in repack.js); fall back to the in-frame one.
   function openImage(src, thumb = "") {
     const cleanSrc = src.replace(/^http:\/\//i, "https://");
     const cleanThumb = thumb ? thumb.replace(/^http:\/\//i, "https://") : "";
@@ -72,6 +97,7 @@
   }
 
   // Intercept clicks on any image or image link in comments
+  // Capture clicks on comment images / image links and open them in the lightbox instead of navigating away.
   document.addEventListener("click", e => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
     const target = e.target;

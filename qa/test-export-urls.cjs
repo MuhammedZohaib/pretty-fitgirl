@@ -1,3 +1,6 @@
+/**
+ * Playwright test: the "Download .txt" buttons on a repack page export the expected hoster URL lists. Not shipped.
+ */
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');

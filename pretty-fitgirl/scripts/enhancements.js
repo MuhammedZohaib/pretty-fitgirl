@@ -3,11 +3,14 @@
   "use strict";
   if (location.hostname !== "fitgirl-repacks.site" || window.top !== window) return;
   const root = document.documentElement;
+  // User preference defaults; the popup writes the same shape to chrome.storage.local under "modernFitGirl".
   const defaults = { enabled: true, density: "comfortable", view: "grid" };
   let preferences = { ...defaults };
+  // `ready` = DOM parsed; `enhanced` = DOM rewrite applied; `changes` = undo stack used to restore the original page when disabled.
   let ready = false;
   let enhanced = false;
   const changes = [];
+  // Prepend the extension logo to the site title.
   function siteLogo() {
     const brand = document.querySelector("#masthead .site-title a");
     if (!brand) return;
@@ -23,6 +26,7 @@
     } catch { /* The original linked site title remains available. */ }
   }
 
+  // Popular-repacks pages: add month/year tabs, a live filter and rank numbers over the original grid.
   function popularPage(content) {
     if (!/^\/(popular-repacks|pop-repacks|popular-repacks-of-the-year)\/?$/.test(location.pathname)) return false;
     const body = content.querySelector("article > .entry-content");
@@ -96,23 +100,27 @@
     return true;
   }
 
+  // Reflect the current view (grid/list) on the toolbar buttons.
   function syncControls() {
     for (const button of document.querySelectorAll(".mfg-view-button")) {
       button.setAttribute("aria-pressed", String(button.dataset.view === preferences.view));
     }
   }
 
+  // Switch grid/list immediately and persist the choice.
   function changeView(view) {
     preferences = normalize({ ...preferences, view });
     apply();
     try { chrome.storage.local.set({ modernFitGirl: preferences }); } catch { /* Retain the local view if storage is unavailable. */ }
   }
 
+  // Undo every DOM change (newest first) - used when the user turns the theme off.
   function restore() {
     for (const undo of changes.splice(0).reverse()) undo();
     enhanced = false;
   }
 
+  // Main entry: pick the right transformer for the current page type (digest, A-Z, popular, detail, listing). Idempotent and fails safe if the theme changes.
   function enhance() {
     if (enhanced) return;
     // Only the homepage has #main-content; archives/search/detail place #primary in #main.
@@ -294,6 +302,7 @@
     revealHash();
   }
 
+  // If the URL targets an element inside a collapsed <details>, open it and scroll to it.
   function revealHash() {
     if (!location.hash || !preferences.enabled) return;
     let target;
@@ -308,6 +317,7 @@
     if (opened) target.scrollIntoView({ block: "start" });
   }
 
+  // Apply preferences: root classes first (pure CSS, instant), DOM enhancement only once the DOM is ready.
   function apply() {
     root.classList.toggle("mfg-on", preferences.enabled);
     root.classList.toggle("mfg-off", !preferences.enabled);
@@ -323,6 +333,7 @@
     }
   }
 
+  // Sanitise stored preferences, falling back to defaults for any missing/invalid field.
   function normalize(value) {
     return {
       enabled: typeof value?.enabled === "boolean" ? value.enabled : defaults.enabled,

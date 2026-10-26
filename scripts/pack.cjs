@@ -1,3 +1,6 @@
+/**
+ * Build script: packages the pretty-fitgirl/ folder into a store-ready ZIP using a small zero-dependency ZIP writer (no npm packages needed).
+ */
 const fs = require('node:fs');
 const path = require('node:path');
 const zlib = require('node:zlib');

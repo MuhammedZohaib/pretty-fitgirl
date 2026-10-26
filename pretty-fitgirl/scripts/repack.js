@@ -1,6 +1,7 @@
 /* Presentation from the current article only. No metadata requests or inferred sizes. */
 (() => {
   "use strict";
+  // Maps lowercase labels found in the "Repack Size: ..." paragraph to [internal key, display label].
   const fields = {
     "genres/tags": ["genres", "Genres"], genres: ["genres", "Genres"], tags: ["genres", "Genres"],
     company: ["company", "Company"], companies: ["company", "Companies"],
@@ -8,6 +9,7 @@
     "original size": ["original", "Original size"], "repack size": ["repack", "Repack size"]
   };
 
+  // Parse the metadata paragraph (sizes, languages, genres...) plus install hints from the feature list into { paragraph, rows, values }.
   function metadata(body) {
     const paragraph = [...body.querySelectorAll(":scope > p")].find(node => /Repack Size\s*:/i.test(node.textContent) && /Original Size\s*:|Languages?\s*:/i.test(node.textContent));
     const result = { paragraph, rows: [], values: {} };
@@ -45,6 +47,7 @@
     return result;
   }
 
+  // Build the neutral "Cover unavailable" SVG block shown while/if artwork is missing.
   function placeholder() {
     const fallback = document.createElement("span");
     fallback.className = "mfg-cover-placeholder";
@@ -60,8 +63,10 @@
     return fallback;
   }
 
+  // Leading arrow glyphs the site puts in front of some titles; stripped for display and search.
   const ARROW_RE = /^[\s ]*[→↣⇢➔➜➤➡⮕➝➢]+\s*/;
 
+  // Decode the few HTML entities that appear in raw titles (textContent is not always pre-decoded).
   function decodeEntities(str) {
     return (str || '')
       .replace(/&#8211;/g, '–')
@@ -73,10 +78,12 @@
       .replace(/&apos;/g, "'");
   }
 
+  // Human-readable game name: decoded, whitespace-collapsed, arrow-free.
   function gameName(raw) {
     return decodeEntities(raw).replace(/\s+/g, ' ').trim().replace(ARROW_RE, '').trim();
   }
 
+  // Reduce a repack title to a clean store-search query (drops version, build, DLC, bracket and "Delayed" noise).
   function searchName(name) {
     let t = decodeEntities(name).replace(ARROW_RE, '').trim();
     t = t.replace(/#\d+\s*(?:Updated)?/gi, ' ');
@@ -93,12 +100,14 @@
     return t.replace(/\s+/g, ' ').trim();
   }
 
+  // Convert a Steam header.jpg URL into the matching 600x900 vertical poster URL (null if not a Steam URL).
   function headerToPoster(headerUrl) {
     const appId = headerUrl?.match(/\/apps\/(\d+)\//)?.[1];
     if (!appId) return null;
     return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`;
   }
 
+  // Ask the background worker for artwork for many titles at once. Always resolves (to {}) on failure/timeout so UI never hangs.
   function resolveImages(queries) {
     return new Promise((resolve) => {
       try {
@@ -123,17 +132,40 @@
     });
   }
 
+  // Per-page memo of lookups: query -> Promise<artwork|null>. Avoids asking twice for one title.
   const gameCache = new Map();
+  // Queries waiting to be sent together. Cards are built in a tight loop, so
+  // coalescing them into ONE runtime message (one batched cache read in the
+  // background worker) is much faster than one message per card.
+  let batch = null;
 
+  /** Queue a query into the current batch and flush on the next ~16ms tick. */
+  function queueQuery(query) {
+    if (!batch) {
+      batch = { queries: new Set(), waiters: [] };
+      const current = batch;
+      setTimeout(() => {
+        if (batch === current) batch = null;
+        resolveImages([...current.queries]).then((results) => {
+          for (const w of current.waiters) w.resolve(results ? results[w.query] || null : null);
+        });
+      }, 16);
+    }
+    batch.queries.add(query);
+    return new Promise((resolve) => batch.waiters.push({ query, resolve }));
+  }
+
+  /** Resolve artwork for a single (already cleaned) game title; batched + memoised. */
   function resolveOneGame(query) {
     if (!query) return Promise.resolve(null);
     if (gameCache.has(query)) return gameCache.get(query);
-    const promise = resolveImages([query]).then((results) => results ? results[query] || null : null);
+    const promise = queueQuery(query);
     gameCache.set(query, promise);
     // Never keep a failed lookup: allow a later card to retry it.
     promise.then((value) => { if (!value) gameCache.delete(query); });
     return promise;
   }
+  // Show a loading ring inside a cover box (idempotent).
   function showSpinner(box) {
     if (!box || box.querySelector(".mfg-cover-spinner")) return;
     const spinner = document.createElement("div");
@@ -145,11 +177,13 @@
     box.append(spinner);
   }
 
+  // Remove any loading ring from a cover box.
   function hideSpinner(box) {
     if (!box) return;
     box.querySelectorAll(".mfg-cover-spinner").forEach((s) => s.remove());
   }
 
+  // Overlay a small "Steam" / "GOG" / "Original" label showing where the cover came from.
   function setSourceBadge(box, source) {
     if (!box || !source) return;
     box.querySelector(".mfg-cover-badge")?.remove();
@@ -161,6 +195,7 @@
     box.append(badge);
   }
 
+  // Fetch artwork via the background worker and attach it to the box, trying each candidate URL until one loads.
   function loadSteamCover(box, title) {
     const rawTitle = title || '';
     const query = searchName(rawTitle);
@@ -230,6 +265,7 @@
     });
   }
 
+  // Build a cover box: upgrade the original thumbnail to a Steam poster when possible, otherwise fall back to the original, then to a store lookup.
   function cover(image, url, title, className = "mfg-cover", allowSteamFallback = true) {
     const box = document.createElement(url ? "a" : "div");
     box.className = className;
@@ -286,6 +322,7 @@
     return box;
   }
 
+  // Build the compact info block shown on listing cards (sizes, languages, first 3 tags, link).
   function summary(article, data, url) {
     const section = document.createElement("div");
     section.className = "mfg-card-information";
@@ -320,6 +357,7 @@
     return section;
   }
 
+  // Clone a metadata row's nodes (keeping links/markup) minus its "Label:" prefix.
   function richValue(row) {
     const fragment = document.createDocumentFragment();
     for (const node of row.nodes) fragment.append(node.cloneNode(true));
@@ -339,6 +377,7 @@
     return fragment;
   }
 
+  // Restyle a single repack page: hero header, badges, info panel and tabbed sections. Every DOM move is recorded in `changes` so it can be fully undone.
   function enhanceDetail(article, changes) {
     const body = article.querySelector(":scope > .entry-content");
     const header = article.querySelector(":scope > .entry-header");
@@ -536,6 +575,7 @@
     }
 
     const moved = [];
+    // Move a node into a tab panel while remembering its original position for undo.
     function moveInto(target, child) {
       moved.push({ node: child, parent: child.parentNode, next: child.nextSibling });
       target.append(child);
@@ -561,22 +601,174 @@
 
     const actions = document.createElement("div");
     actions.className = "mfg-lightbox-actions";
+
+    // Zoom & Pan State
+    let zoomLevel = 1;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialPanX = 0;
+    let initialPanY = 0;
+    let hasMoved = false;
+
+    const MIN_ZOOM = 0.5;
+    const MAX_ZOOM = 4;
+    const ZOOM_STEP = 0.25;
+
+    const zoomBar = document.createElement("div");
+    zoomBar.className = "mfg-lightbox-zoom-bar";
+
+    const btnZoomOut = document.createElement("button");
+    btnZoomOut.type = "button";
+    btnZoomOut.className = "mfg-lightbox-btn mfg-zoom-out";
+    btnZoomOut.setAttribute("aria-label", "Zoom out");
+    btnZoomOut.title = "Zoom out (-)";
+    btnZoomOut.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+    const btnZoomReset = document.createElement("button");
+    btnZoomReset.type = "button";
+    btnZoomReset.className = "mfg-lightbox-btn mfg-zoom-reset";
+    btnZoomReset.setAttribute("aria-label", "Reset zoom");
+    btnZoomReset.title = "Reset zoom (0)";
+    const zoomVal = document.createElement("span");
+    zoomVal.className = "mfg-zoom-val";
+    zoomVal.textContent = "100%";
+    btnZoomReset.append(zoomVal);
+
+    const btnZoomIn = document.createElement("button");
+    btnZoomIn.type = "button";
+    btnZoomIn.className = "mfg-lightbox-btn mfg-zoom-in";
+    btnZoomIn.setAttribute("aria-label", "Zoom in");
+    btnZoomIn.title = "Zoom in (+)";
+    btnZoomIn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+    zoomBar.append(btnZoomOut, btnZoomReset, btnZoomIn);
+
     const extLink = document.createElement("a");
     extLink.className = "mfg-lightbox-link";
     extLink.target = "_blank";
     extLink.rel = "noopener noreferrer";
     extLink.textContent = "Open original ↗";
-    actions.append(extLink);
+    actions.append(zoomBar, extLink);
 
     lightbox.append(closeBtn, lbImg, actions);
     document.body.append(lightbox);
     changes.push(() => lightbox.remove());
+
+    const updateTransform = (animate = true) => {
+      lbImg.style.transition = animate ? "transform 140ms ease-out" : "none";
+      lbImg.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+      if (zoomLevel > 1) {
+        lbImg.style.cursor = isDragging ? "grabbing" : "grab";
+      } else {
+        lbImg.style.cursor = "zoom-in";
+      }
+      zoomVal.textContent = `${Math.round(zoomLevel * 100)}%`;
+      btnZoomOut.disabled = zoomLevel <= MIN_ZOOM;
+      btnZoomIn.disabled = zoomLevel >= MAX_ZOOM;
+    };
+
+    const resetZoom = () => {
+      zoomLevel = 1;
+      panX = 0;
+      panY = 0;
+      isDragging = false;
+      hasMoved = false;
+      updateTransform(true);
+    };
+
+    const setZoom = (target, animate = true) => {
+      zoomLevel = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(target * 100) / 100));
+      if (zoomLevel === 1) {
+        panX = 0;
+        panY = 0;
+      }
+      updateTransform(animate);
+    };
+
+    btnZoomOut.addEventListener("click", e => {
+      e.stopPropagation();
+      setZoom(zoomLevel - ZOOM_STEP);
+    });
+
+    btnZoomReset.addEventListener("click", e => {
+      e.stopPropagation();
+      resetZoom();
+    });
+
+    btnZoomIn.addEventListener("click", e => {
+      e.stopPropagation();
+      setZoom(zoomLevel + ZOOM_STEP);
+    });
+
+    // Image click & drag
+    lbImg.addEventListener("click", e => {
+      if (hasMoved) return;
+      e.stopPropagation();
+      if (zoomLevel === 1) {
+        setZoom(2);
+      } else {
+        resetZoom();
+      }
+    });
+
+    lbImg.addEventListener("dblclick", e => {
+      e.stopPropagation();
+      if (zoomLevel !== 1) resetZoom();
+      else setZoom(2.5);
+    });
+
+    lbImg.addEventListener("mousedown", e => {
+      if (e.button !== 0 || zoomLevel <= 1) return;
+      isDragging = true;
+      hasMoved = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      initialPanX = panX;
+      initialPanY = panY;
+      lbImg.style.cursor = "grabbing";
+      e.preventDefault();
+    });
+
+    const onMouseMove = e => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+      panX = initialPanX + dx;
+      panY = initialPanY + dy;
+      updateTransform(false);
+    };
+
+    const onMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      updateTransform(true);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    changes.push(() => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    });
+
+    // Mouse wheel zoom
+    lightbox.addEventListener("wheel", e => {
+      if (!lightbox.classList.contains("mfg-lightbox-open")) return;
+      e.preventDefault();
+      const step = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+      setZoom(zoomLevel + step);
+    }, { passive: false });
 
     let currentThumb = "";
     const openLb = (fullSrc, thumbSrc = "") => {
       currentThumb = thumbSrc;
       extLink.href = fullSrc;
       lbImg.src = fullSrc;
+      resetZoom();
       lightbox.classList.add("mfg-lightbox-open");
     };
 
@@ -592,11 +784,23 @@
       lightbox.classList.remove("mfg-lightbox-open");
       lbImg.src = "";
       currentThumb = "";
+      resetZoom();
     };
 
     closeBtn.addEventListener("click", closeLb);
     lightbox.addEventListener("click", e => { if (e.target === lightbox) closeLb(); });
-    const onEsc = e => { if (e.key === "Escape" && lightbox.classList.contains("mfg-lightbox-open")) closeLb(); };
+    const onEsc = e => {
+      if (!lightbox.classList.contains("mfg-lightbox-open")) return;
+      if (e.key === "Escape") {
+        closeLb();
+      } else if (e.key === "+" || e.key === "=") {
+        setZoom(zoomLevel + ZOOM_STEP);
+      } else if (e.key === "-" || e.key === "_") {
+        setZoom(zoomLevel - ZOOM_STEP);
+      } else if (e.key === "0") {
+        resetZoom();
+      }
+    };
     document.addEventListener("keydown", onEsc);
     changes.push(() => document.removeEventListener("keydown", onEsc));
 
@@ -972,5 +1176,6 @@
     }
   }
 
+  // Public API consumed by the other content scripts (they share one isolated world).
   globalThis.MFGRepack = { metadata, placeholder, cover, summary, enhanceDetail, searchName, gameName, resolveImages, showSpinner, hideSpinner, setSourceBadge, headerToPoster, loadSteamCover };
 })();

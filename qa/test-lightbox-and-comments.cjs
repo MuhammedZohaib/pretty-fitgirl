@@ -1,3 +1,6 @@
+/**
+ * Playwright test: screenshot lightbox (zoom/pan/close) and the collapsible comments area. Not shipped.
+ */
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');

@@ -1,6 +1,7 @@
 /* Reversible interface helpers. Source comments, update links, and handlers remain intact. */
 (() => {
   "use strict";
+  // Page chrome: mobile "Browse" toggle, skip link, back-to-top button, and collapsible comments.
   function mount(content, changes) {
     const header = document.getElementById("masthead");
     const browse = document.querySelector(".mfg-browse-sidebar");
@@ -24,6 +25,7 @@
     comments(content, changes);
   }
 
+  // Collapse the Tolstoy/Disqus/native comments into a single "Comments" disclosure (nodes are moved, not copied, so scripts keep working).
   function comments(content, changes) {
     if (!document.body.matches(".single, .page")) return;
     const feeds = [...document.querySelectorAll(".tolstoycomments-feed")];
@@ -69,6 +71,7 @@
     changes.push(() => window.removeEventListener("hashchange", reveal));
   }
 
+  // Update-digest category pages: restyle digest posts into a scannable list.
   function digest(content, changes) {
     const archive = document.body.matches(".archive.category-updates-digest");
     const articles = [...content.querySelectorAll("article.category-updates-digest")];
@@ -143,10 +146,13 @@
     return true;
   }
 
+  // Safety cap: never build more than this many upcoming-game cards.
   const MAX_UPCOMING_GAMES = 60;
+  // Matches the "Upcoming repacks" heading used by the site.
   const UPCOMING_HEADING_RE = /upcoming\s+repacks/i;
   const ARROW_RE = /^[\s ]*[→↣⇢➔➜➤➡⮕➝➢]+\s*/;
 
+  // Locate the article that contains the upcoming-repacks list.
   function findUpcomingArticle(root) {
     const titles = root.querySelectorAll('.entry-title, h1, h2, h3');
     for (const t of titles) {
@@ -161,6 +167,7 @@
     return null;
   }
 
+  // Collect the per-game <span> entries of the upcoming list.
   function gameSpans(article) {
     const root = article.querySelector('.entry-content') || article;
     const spans = [...root.querySelectorAll('span')];
@@ -175,6 +182,7 @@
     return games.slice(0, MAX_UPCOMING_GAMES);
   }
 
+  // Build a YouTube gameplay search link for a title.
   function youtubeUrl(query) {
     return (
       'https://www.youtube.com/results?search_query=' +
@@ -183,6 +191,7 @@
     );
   }
 
+  // Create one poster card (title, badges, "Watch gameplay" button) for an upcoming game.
   function decorateUpcomingCard(span, display, image) {
     if (span.dataset.fgyt) return null;
     span.dataset.fgyt = '1';
@@ -304,6 +313,7 @@
     return card;
   }
 
+  // Replace the upcoming-repacks text list with a poster grid; artwork is filled in asynchronously (one batched lookup).
   function upcoming(content, changes) {
     const article = findUpcomingArticle(content);
     if (!article) return false;
@@ -432,5 +442,6 @@
     return true;
   }
 
+  // Exposed to enhancements.js.
   globalThis.MFGExperience = { mount, digest, upcoming };
 })();

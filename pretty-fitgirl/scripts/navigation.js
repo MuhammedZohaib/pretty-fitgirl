@@ -1,6 +1,7 @@
 /* Two separate supporting columns; moved widgets return to their original positions. */
 (() => {
   "use strict";
+  // Build the left "Browse" sidebar and right "From the site" column, relocating the original WordPress widgets into collapsible panels.
   function mount(changes) {
     const main = document.getElementById("main");
     if (!main) return;
@@ -24,6 +25,7 @@
     }
     browse.append(navigation);
     const promoTitle = document.createElement("h2"); promoTitle.textContent = "From the site"; promotion.append(promoTitle);
+    // Wrap a widget in a <details> panel; a comment marker records where it came from so it can be put back.
     function move(node, destination, label, open = false) {
       const marker = document.createComment("mfg-sidebar-position"); node.before(marker);
       const details = document.createElement("details"); details.className = "mfg-side-panel"; details.open = open;
@@ -41,6 +43,7 @@
     }
     const description = document.querySelector("#secondary > .site-description");
     if (description) move(description, promotion, "About the site");
+    // Merge menu + widget links into an "Additional collections" list, skipping anything already shown.
     const collections = browse.querySelector("#block-7");
     if (collections) {
       const key = link => link.pathname === "/pop-repacks/" ? "/popular-repacks/" : link.pathname;
@@ -55,5 +58,6 @@
       changes.push(() => { extra.remove(); originalClass === null ? collections.removeAttribute("class") : collections.setAttribute("class", originalClass); });
     }
   }
+  // Exposed to enhancements.js.
   globalThis.MFGNavigation = { mount };
 })();

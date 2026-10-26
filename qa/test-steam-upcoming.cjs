@@ -1,3 +1,6 @@
+/**
+ * Playwright test: the upcoming-repacks poster grid and its Steam/GOG artwork resolution. Not shipped.
+ */
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');

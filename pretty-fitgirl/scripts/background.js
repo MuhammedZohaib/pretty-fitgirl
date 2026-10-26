@@ -15,10 +15,12 @@ const GOG_SEARCH =
   'https://catalog.gog.com/v1/catalog?limit=10&locale=en-US&query=';
 const CONCURRENCY = 6;
 
+/** Normalised storage key: case/whitespace-insensitive so "Foo  Bar" and "foo bar" share one entry. */
 function cacheKey(title) {
   return CACHE_PREFIX + title.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+/** Steam artwork URL builders. *Alt variants use a second CDN as a fallback if the first is blocked/slow. */
 function steamPosterUrl(appid) {
   return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`;
 }
@@ -39,25 +41,83 @@ function steamHeroUrl(appid) {
   return `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appid}/library_hero.jpg`;
 }
 
-async function cacheGet(key) {
-  try {
-    const o = await chrome.storage.local.get(key);
-    const v = o ? o[key] : undefined;
-    if (v && Date.now() - v.ts < CACHE_TTL_MS) return v.data; // may be null (miss)
-  } catch {
-    // ignore storage read error
-  }
-  return undefined;
+// ---------------------------------------------------------------------------
+// Two-level cache
+//   L1: `memory` Map  - lives as long as the service worker (instant, no IPC).
+//   L2: chrome.storage.local - survives worker restarts (MV3 workers are
+//       killed after ~30s idle, so L1 alone is not enough).
+// Both levels honour CACHE_TTL_MS. A cached `null` means "confirmed no artwork".
+// ---------------------------------------------------------------------------
+const memory = new Map(); // key -> { ts, data }
+const inflight = new Map(); // key -> Promise; dedupes concurrent lookups of one title
+
+/** True when a stored record exists and has not expired. */
+function fresh(v) {
+  return Boolean(v) && typeof v.ts === 'number' && Date.now() - v.ts < CACHE_TTL_MS;
 }
 
-async function cacheSet(key, data) {
+/**
+ * Read many keys with ONE storage round-trip (instead of one per title) and
+ * fill L1 from the result. Returns Map<key, data> for fresh hits only.
+ */
+async function cacheGetMany(keys) {
+  const hits = new Map();
+  const missing = [];
+  for (const key of keys) {
+    const m = memory.get(key);
+    if (fresh(m)) hits.set(key, m.data);
+    else missing.push(key);
+  }
+  if (!missing.length) return hits;
   try {
-    await chrome.storage.local.set({ [key]: { ts: Date.now(), data } });
+    const stored = await chrome.storage.local.get(missing);
+    for (const key of missing) {
+      const v = stored ? stored[key] : undefined;
+      if (fresh(v)) {
+        memory.set(key, v);
+        hits.set(key, v.data); // may be null (known miss)
+      }
+    }
   } catch {
-    // ignore storage write error
+    // ignore storage read error: we simply re-resolve from the network
+  }
+  return hits;
+}
+
+/** Write many entries with ONE storage call and update L1 immediately. */
+async function cacheSetMany(entries) {
+  const batch = {};
+  const ts = Date.now();
+  for (const [key, data] of entries) {
+    const record = { ts, data };
+    memory.set(key, record);
+    batch[key] = record;
+  }
+  if (!Object.keys(batch).length) return;
+  try {
+    await chrome.storage.local.set(batch);
+  } catch {
+    // ignore storage write error (quota etc.); L1 still serves this session
   }
 }
 
+/** Remove expired artwork records so storage does not grow forever. */
+async function pruneExpired() {
+  try {
+    const all = await chrome.storage.local.get(null);
+    const stale = Object.keys(all).filter(
+      (k) => k.startsWith(CACHE_PREFIX) && !fresh(all[k])
+    );
+    if (stale.length) await chrome.storage.local.remove(stale);
+  } catch {
+    // best-effort housekeeping only
+  }
+}
+// Run housekeeping when the browser starts / extension updates, never on page load.
+chrome.runtime.onStartup.addListener(pruneExpired);
+chrome.runtime.onInstalled.addListener(pruneExpired);
+
+/** Lowercase and strip punctuation so titles compare loosely. */
 function norm(s) {
   return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
@@ -88,6 +148,10 @@ function pickBestGog(products, title) {
   return match || null;
 }
 
+/**
+ * Search Steam for a title. Returns artwork URLs, null if no match, and THROWS on
+ * network / HTTP errors so callers can avoid caching a transient failure as a miss.
+ */
 async function steamLookup(title) {
   try {
     const res = await fetch(STEAM_SEARCH + encodeURIComponent(title), {
@@ -140,6 +204,7 @@ async function steamLookup(title) {
   }
 }
 
+/** Search GOG public catalog; returns cover URLs or null (errors are treated as a miss). */
 async function gogLookup(title) {
   try {
     const q = encodeURIComponent('like:' + title);
@@ -163,45 +228,41 @@ async function gogLookup(title) {
   }
 }
 
+/**
+ * Resolve artwork for one title. Steam and GOG are queried IN PARALLEL (the
+ * old code ran GOG only after Steam finished, adding a full round-trip).
+ * Steam wins when it has a match; GOG supplies a fallback poster / full fallback.
+ * Throws when Steam failed transiently and nothing else matched, so the caller
+ * does not cache a false "no artwork" result.
+ */
 async function resolveArtwork(title) {
-  // 1. Steam first (best primary source, 600x900 vertical poster + header)
-  let steam = null;
-  let steamFailed = false;
-  try {
-    steam = await steamLookup(title);
-  } catch {
-    steamFailed = true;
-  }
+  const [steamResult, gog] = await Promise.all([
+    steamLookup(title).then(
+      (value) => ({ value, failed: false }),
+      () => ({ value: null, failed: true })
+    ),
+    gogLookup(title).catch(() => null),
+  ]);
+
+  const steam = steamResult.value;
   if (steam) {
-    try {
-      const gog = await gogLookup(title);
-      if (gog?.poster) steam.gogPoster = gog.poster;
-    } catch {
-      // ignore gog lookup error
-    }
+    if (gog?.poster) steam.gogPoster = gog.poster;
     return steam;
   }
-
-  // 2. GOG fallback for missing posters/games
-  const gog = await gogLookup(title);
-  if (gog) return gog;
-  if (steamFailed) throw new Error('steam unavailable'); // don't cache a false miss
-
+  if (gog) return gog; // GOG fallback for missing posters/games
+  if (steamResult.failed) throw new Error('steam unavailable'); // don't cache a false miss
   return null;
 }
 
-async function resolveOne(title) {
-  const key = cacheKey(title);
-  const cached = await cacheGet(key);
-  if (cached !== undefined) return cached; // cached hit OR cached known-miss
-  let data = null;
-  try {
-    data = await resolveArtwork(title);
-  } catch {
-    return null; // transient failure: don't cache, retry next time
-  }
-  await cacheSet(key, data); // cache real results and confirmed misses (null)
-  return data;
+/** Network resolve + dedupe of identical in-flight lookups. */
+function resolveFromNetwork(key, title) {
+  if (inflight.has(key)) return inflight.get(key);
+  const p = resolveArtwork(title)
+    .then((data) => ({ ok: true, data }))
+    .catch(() => ({ ok: false, data: null })) // transient failure: don't cache
+    .finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
 }
 
 // Global limiter so many parallel messages never flood Steam/GOG.
@@ -223,17 +284,40 @@ function limited(fn) {
   });
 }
 
+/**
+ * Resolve a list of titles. Cache hits are answered from ONE batched storage
+ * read; only genuine misses hit the network (rate-limited), and all new results
+ * are persisted with ONE batched write.
+ */
 async function resolveAll(titles) {
   const unique = [...new Set(titles)];
+  const keyOf = new Map(unique.map((t) => [t, cacheKey(t)]));
+  const hits = await cacheGetMany([...keyOf.values()]);
+
   const resolved = {};
-  await Promise.all(unique.map((t) => limited(async () => {
-    resolved[t] = await resolveOne(t);
-  })));
+  const fresh_entries = [];
+  await Promise.all(
+    unique.map((t) => {
+      const key = keyOf.get(t);
+      if (hits.has(key)) {
+        resolved[t] = hits.get(key); // cached hit OR cached known-miss
+        return null;
+      }
+      return limited(async () => {
+        const { ok, data } = await resolveFromNetwork(key, t);
+        resolved[t] = data;
+        if (ok) fresh_entries.push([key, data]); // cache real results and confirmed misses (null)
+      });
+    })
+  );
+  if (fresh_entries.length) await cacheSetMany(fresh_entries);
 
   const out = {};
   for (const t of titles) out[t] = resolved[t] ?? null;
   return out;
 }
+
+// Content scripts send { type: 'resolveGames', titles: [...] }; we reply with { title: artwork|null }.
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === 'resolveGames' && Array.isArray(msg.titles)) {
     resolveAll(msg.titles)

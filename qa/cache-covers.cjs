@@ -1,3 +1,6 @@
+/**
+ * Developer-only QA helper: downloads the cover images referenced by the captured sources/home.html into qa/sources/images so visual tests run offline. Not shipped in the extension.
+ */
 const fs = require('node:fs');
 const { execFile } = require('node:child_process');
 const path = require('node:path');

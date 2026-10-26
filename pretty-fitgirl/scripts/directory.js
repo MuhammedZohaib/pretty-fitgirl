@@ -1,23 +1,29 @@
 /* Enrich only visible A–Z entries, using their original same-origin repack pages. */
 (() => {
   "use strict";
+  // Turn the A-Z list into a cover grid. Covers load lazily (only near the viewport) with limited concurrency, and are cached for 7 days.
   function mount(content, changes) {
     if (!/^\/all-my-repacks-a-z\/?$/.test(location.pathname)) return false;
     const list = content.querySelector(".entry-content > .lcp_catlist");
     if (!list) return false;
     content.classList.add("mfg-directory");
     changes.push(() => content.classList.remove("mfg-directory"));
+    // `active` flips to false on undo so in-flight work stops touching the page; the controller aborts pending fetches.
     let active = true;
     const controller = new AbortController();
     const pending = [];
     let running = 0;
+    // Covers already visible on the page (e.g. sidebar) - reuse them instead of fetching.
     const observedArt = new Map();
     for (const image of document.querySelectorAll("a[href] img[src]")) {
       const link = image.closest("a[href]");
       if (link.origin === location.origin) observedArt.set(link.href, image.src);
     }
+    // Only accept https image URLs (blocks javascript:/data: or mixed content).
     const allowed = value => { try { const url = new URL(value); return url.protocol === "https:" ? url.href : ""; } catch { return ""; } };
+    // Per-page storage key (path only, so http/https/host variants share an entry).
     const cacheKey = url => `mfg.cover.v1.${new URL(url).pathname}`;
+    // Find a cover URL for a repack page: page art -> storage cache -> fetch the page and read its first alignleft image.
     const imageFor = async url => {
       if (observedArt.has(url)) return observedArt.get(url);
       try {
@@ -42,6 +48,7 @@
       }
       return src;
     };
+    // Worker loop: keep at most 3 cover loads running so we do not hammer the site.
     async function pump() {
       while (active && running < 3 && pending.length) {
         const { card, url, frame, title } = pending.shift(); running++;
@@ -69,6 +76,7 @@
         })();
       }
     }
+    // Queue a card for loading only when it is about to scroll into view (250px margin).
     const observer = new IntersectionObserver(entries => {
       for (const entry of entries) if (entry.isIntersecting) {
         observer.unobserve(entry.target);
@@ -92,11 +100,24 @@
     }
     changes.push(() => { active = false; observer.disconnect(); controller.abort(); pending.length = 0; });
     // Prune older artwork-cache entries without touching user preferences.
-    try { chrome.storage.local.get(null).then(values => {
-      const keys = Object.entries(values).filter(([key]) => key.startsWith("mfg.cover.v1.")).sort((a, b) => (b[1]?.time || 0) - (a[1]?.time || 0)).slice(300).map(([key]) => key);
-      if (active && keys.length) chrome.storage.local.remove(keys);
-    }).catch(() => {}); } catch {}
+    // PERF: get(null) loads the ENTIRE storage area, so run it at most once a day
+    // (tracked by a tiny timestamp key) and defer it until the browser is idle.
+    const prune = () => {
+      try {
+        chrome.storage.local.get("mfg.cover.pruned").then(meta => {
+          if (Date.now() - (meta["mfg.cover.pruned"] || 0) < 86400000) return;
+          return chrome.storage.local.get(null).then(values => {
+            const keys = Object.entries(values).filter(([key]) => key.startsWith("mfg.cover.v1.")).sort((a, b) => (b[1]?.time || 0) - (a[1]?.time || 0)).slice(300).map(([key]) => key);
+            if (active && keys.length) chrome.storage.local.remove(keys);
+            chrome.storage.local.set({ "mfg.cover.pruned": Date.now() });
+          });
+        }).catch(() => {});
+      } catch {}
+    };
+    if (typeof requestIdleCallback === "function") requestIdleCallback(prune, { timeout: 5000 });
+    else setTimeout(prune, 2000);
     return true;
   }
+  // Exposed to enhancements.js.
   globalThis.MFGDirectory = { mount };
 })();

@@ -1,3 +1,6 @@
+/**
+ * Developer-only QA script: launches Playwright and exercises the navigation/sidebar UI for visual review. Not shipped in the extension.
+ */
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');

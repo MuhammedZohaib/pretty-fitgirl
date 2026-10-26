@@ -271,7 +271,12 @@ html.mfg-comments-on ::-webkit-scrollbar-thumb:hover {
   border-radius: 8px;
   border: 1px solid #333333;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9);
+  cursor: zoom-in;
+  user-select: none;
+  transform-origin: center center;
 }
+
+.mfg-frame-lightbox { overflow: hidden; }
 
 .mfg-frame-lightbox-close {
   position: absolute;

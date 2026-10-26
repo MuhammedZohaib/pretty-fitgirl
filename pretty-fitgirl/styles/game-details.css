@@ -1316,6 +1316,61 @@ html.mfg-on #content #mfg-panel-sc video {
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
   object-fit: contain;
   animation: mfgLbIn 180ms ease-out;
+  cursor: zoom-in;
+  transform-origin: center center;
+  will-change: transform;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.mfg-lightbox { overflow: hidden; }
+
+.mfg-lightbox-zoom-bar {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--geist-radius-pill);
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  padding: 2px;
+  gap: 2px;
+}
+
+.mfg-lightbox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.875rem;
+  min-width: 1.875rem;
+  padding: 0 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--geist-radius-pill);
+  color: #ededed;
+  font-family: var(--mfg-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--mfg-speed);
+  user-select: none;
+}
+
+.mfg-lightbox-btn svg { width: 0.875rem; height: 0.875rem; }
+
+.mfg-lightbox-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.mfg-lightbox-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.mfg-zoom-val {
+  font-variant-numeric: tabular-nums;
+  min-width: 2.5rem;
+  text-align: center;
 }
 
 @keyframes mfgLbIn {

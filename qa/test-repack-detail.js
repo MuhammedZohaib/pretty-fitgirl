@@ -1,3 +1,6 @@
+/**
+ * Ad-hoc Playwright script: renders a repack detail page with the extension styles for manual inspection. Not shipped.
+ */
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');

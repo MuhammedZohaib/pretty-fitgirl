@@ -1,3 +1,6 @@
+/**
+ * Regenerates the README screenshots in docs/images using Playwright against locally rendered pages. Developer-only.
+ */
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
