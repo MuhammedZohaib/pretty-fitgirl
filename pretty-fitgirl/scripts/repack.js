@@ -62,22 +62,41 @@
 
   const ARROW_RE = /^[\s ]*[→↣⇢➔➜➤➡⮕➝➢]+\s*/;
 
+  function decodeEntities(str) {
+    return (str || '')
+      .replace(/&#8211;/g, '–')
+      .replace(/&#8217;/g, '’')
+      .replace(/&#8220;/g, '“')
+      .replace(/&#8221;/g, '”')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'");
+  }
+
   function gameName(raw) {
-    return (raw || '').replace(/\s+/g, ' ').trim().replace(ARROW_RE, '').trim();
+    return decodeEntities(raw).replace(/\s+/g, ' ').trim().replace(ARROW_RE, '').trim();
   }
 
   function searchName(name) {
-    let t = (name || '').replace(ARROW_RE, '').trim();
+    let t = decodeEntities(name).replace(ARROW_RE, '').trim();
     t = t.replace(/#\d+\s*(?:Updated)?/gi, ' ');
-    t = t.replace(/\[[^\]]*\]/g, ' '); // [HV]
-    t = t.replace(/\([^)]*(?:denuvo|dlc|repack|crack)[^)]*\)/gi, ' ');
+    t = t.replace(/\[[^\]]*\]/g, ' '); // [HV], [Selective Download]
+    t = t.replace(/\([^)]*(?:denuvo|dlc|repack|crack|build|v\d)[^)]*\)/gi, ' ');
     t = t.replace(/[–—-]\s*Delayed.*$/i, ' '); // "- Delayed, bad crack"
-    t = t.replace(/[–—-]\s*v\d.*$/i, ' ');
+    t = t.replace(/[–—-]\s*v\d.*$/i, ' '); // "- v1.5.0"
     t = t.replace(/,\s*v\d.*$/i, ' '); // ", v1.5.0"
     t = t.replace(/\s+v\d[\w.]*.*$/i, ' ');
-    t = t.replace(/\+\s*(?:all|\d+)?\s*dlcs?.*$/i, ' ');
+    t = t.replace(/\b(?:build|b)\s*\d+.*$/i, ' '); // "Build 12345"
+    t = t.replace(/\+\s*(?:all|\d+)?\s*dlcs?.*$/i, ' '); // "+ All DLCs"
+    t = t.replace(/\+\s*bonus.*$/i, ' '); // "+ Bonus OST"
     t = t.replace(/[™®©]/g, '');
     return t.replace(/\s+/g, ' ').trim();
+  }
+
+  function headerToPoster(headerUrl) {
+    const appId = headerUrl?.match(/\/apps\/(\d+)\//)?.[1];
+    if (!appId) return null;
+    return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`;
   }
 
   function resolveImages(queries) {
@@ -174,8 +193,17 @@
         hideSpinner(box);
         return;
       }
-      const primary = image.poster || image.header || image.tiny;
-      if (!primary) {
+      const candidates = [
+        image.poster,
+        image.posterAlt,
+        image.gogPoster,
+        image.header,
+        image.headerAlt,
+        image.banner,
+        image.tiny
+      ].filter(Boolean);
+
+      if (!candidates.length) {
         hideSpinner(box);
         return;
       }
@@ -192,29 +220,26 @@
         steamImg.alt = query;
         steamImg.loading = "lazy";
         steamImg.decoding = "async";
-        steamImg.src = primary;
+
+        let candidateIdx = 0;
+        const tryNext = () => {
+          if (candidateIdx < candidates.length) {
+            steamImg.src = candidates[candidateIdx++];
+          } else {
+            steamImg.remove();
+            hideSpinner(box);
+          }
+        };
 
         const onFallbackLoad = () => {
           hideSpinner(box);
           setSourceBadge(box, image.source || "steam");
         };
 
-        if (steamImg.complete && steamImg.naturalWidth > 0) {
-          onFallbackLoad();
-        } else {
-          steamImg.addEventListener("load", onFallbackLoad, { once: true });
-        }
+        steamImg.addEventListener("load", onFallbackLoad, { once: true });
+        steamImg.addEventListener("error", tryNext);
+        tryNext();
 
-        steamImg.addEventListener("error", () => {
-          if (image.header && steamImg.src !== image.header) {
-            steamImg.src = image.header;
-          } else if (image.tiny && steamImg.src !== image.tiny) {
-            steamImg.src = image.tiny;
-          } else {
-            steamImg.remove();
-            hideSpinner(box);
-          }
-        }, { once: true });
         box.append(steamImg);
       }
     }).catch(() => {
@@ -228,7 +253,10 @@
     if (url) { box.href = url; box.setAttribute("aria-label", title); }
     box.append(placeholder());
 
-    const hasOriginal = Boolean(image?.getAttribute("src"));
+    const originalSrc = image?.getAttribute("src");
+    const hasOriginal = Boolean(originalSrc);
+    const directPoster = headerToPoster(originalSrc);
+
     if (hasOriginal) {
       showSpinner(box);
       const preview = document.createElement("img");
@@ -239,9 +267,13 @@
       preview.loading = "lazy";
       preview.decoding = "async";
 
+      if (directPoster) {
+        preview.src = directPoster;
+      }
+
       const onOrigLoad = () => {
         hideSpinner(box);
-        setSourceBadge(box, "original");
+        setSourceBadge(box, directPoster ? "steam" : "original");
       };
 
       if (preview.complete && preview.naturalWidth > 0) {
