@@ -163,43 +163,34 @@ html.mfg-on #content .mfg-comments[open] > summary { border-bottom: 1px solid va
 html.mfg-on #content .mfg-comments-body {
   min-width: 0;
   padding: 1.5rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-height: min(48rem, 80vh);
-  scrollbar-width: thin;
-  scrollbar-color: var(--mfg-border-strong) var(--mfg-secondary);
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
+  height: auto;
 }
 html.mfg-on .mfg-comments-body .tolstoycomments-feed { float: none !important; width: 100% !important; margin: 0 !important; }
 html.mfg-on .mfg-comments-body .tolstoycomments-feed:empty { display: none; }
-html.mfg-on .mfg-comments-body [id^="tolstoycommentswrapper"] {
-  width: 100% !important;
-  min-height: 28rem;
-  max-height: min(48rem, 80vh);
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scrollbar-width: thin;
-  scrollbar-color: var(--mfg-border-strong) var(--mfg-secondary);
-  -webkit-overflow-scrolling: touch;
-}
+html.mfg-on .mfg-comments-body [id^="tolstoycommentswrapper"],
 html.mfg-on .mfg-comments[open] [id^="tolstoycommentswrapper"] {
   position: relative !important;
   display: block !important;
-  inset: auto !important;
   width: 100% !important;
-  min-height: 28rem;
-  max-height: min(48rem, 80vh);
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scrollbar-width: thin;
-  scrollbar-color: var(--mfg-border-strong) var(--mfg-secondary);
-  -webkit-overflow-scrolling: touch;
+  height: auto !important;
+  min-height: 28rem !important;
+  max-height: none !important;
+  overflow: visible !important;
+  inset: auto !important;
 }
+html.mfg-on .mfg-comments-body iframe[id^="tolstoycommentsiframe"],
 html.mfg-on .mfg-comments[open] iframe[id^="tolstoycommentsiframe"] {
+  position: relative !important;
   display: block !important;
   width: 100% !important;
-  min-height: 28rem;
+  min-height: 28rem !important;
+  max-height: none !important;
+  top: 0 !important;
+  bottom: auto !important;
+  left: 0 !important;
   border: 0 !important;
+  margin: 0 !important;
 }
 html.mfg-on .mfg-comments-body iframe {
   width: 100% !important;
