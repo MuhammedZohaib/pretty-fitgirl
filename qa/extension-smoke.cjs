@@ -58,7 +58,11 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
       body: JSON.stringify({ products: [] })
     }));
     await context.route('https://**youtube**/**', route => route.abort());
-    await context.route('https://**imageban.ru/**', route => route.abort());
+    await context.route('https://**imageban.ru/**', route => route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64')
+    }));
     const page = await context.newPage(); const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('https://fitgirl-repacks.site/');
