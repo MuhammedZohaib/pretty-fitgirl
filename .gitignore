@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# QA / Testing outputs and captured fixtures
+qa/sources/
+qa/output/
+
+# Build and release distribution artifacts
+dist/
+release-assets/
+*.zip
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+npm-debug.log*

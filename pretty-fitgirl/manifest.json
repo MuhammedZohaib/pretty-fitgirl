@@ -1,0 +1,84 @@
+{
+  "manifest_version": 3,
+  "name": "Pretty FitGirl",
+  "version": "1.5.0",
+  "description": "An unofficial minimal dark theme with cover cards and organised navigation for the original FitGirl Repacks website.",
+  "minimum_chrome_version": "105",
+  "permissions": [
+    "storage"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/logo.png",
+        "assets/fonts/*.woff2"
+      ],
+      "matches": [
+        "https://fitgirl-repacks.site/*"
+      ]
+    },
+    {
+      "resources": [
+        "assets/fonts/*.woff2"
+      ],
+      "matches": [
+        "https://web.tolstoycomments.com/*"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "assets/icon-16.png",
+    "32": "assets/icon-32.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+  "action": {
+    "default_title": "Pretty FitGirl preferences",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "32": "assets/icon-32.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://fitgirl-repacks.site/*"
+      ],
+      "run_at": "document_start",
+      "css": [
+        "styles/variables.css",
+        "styles/reset.css",
+        "styles/layout.css",
+        "styles/navigation.css",
+        "styles/cards.css",
+        "styles/game-details.css",
+        "styles/responsive.css",
+        "styles/features.css",
+        "styles/repack.css",
+        "styles/refinements.css",
+        "styles/experience.css"
+      ],
+      "js": [
+        "scripts/repack.js",
+        "scripts/navigation.js",
+        "scripts/directory.js",
+        "scripts/experience.js",
+        "scripts/enhancements.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://web.tolstoycomments.com/widget/*"
+      ],
+      "all_frames": true,
+      "run_at": "document_start",
+      "css": [
+        "styles/comments-frame.css"
+      ],
+      "js": [
+        "scripts/comments-frame.js"
+      ]
+    }
+  ]
+}

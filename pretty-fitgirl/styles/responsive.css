@@ -1,0 +1,59 @@
+/* Fixed gutters and fractional tracks keep card edges aligned at every width. */
+@media (min-width: 100em) {
+  html.mfg-on body:is(.home, .archive, .search) #content { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 137.5em) {
+  html.mfg-on body:is(.home, .archive, .search) #content:not(.mfg-eight-games, [data-mfg-game-count="8"]) { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 80em) {
+  html.mfg-on { --mfg-shell-width: calc(100% - 3rem); --mfg-column-gap: 1.5rem; --mfg-sidebar-width: 14rem; }
+  html.mfg-on #masthead { padding-inline: 1.5rem; }
+  html.mfg-on #primary-navigation .nav-menu { column-gap: 1.125rem; }
+}
+@media (max-width: 64em) {
+  html.mfg-on { --mfg-shell-width: calc(100% - 2.5rem); }
+  html.mfg-on #masthead { padding-inline: 1.25rem; }
+  html.mfg-on #main { grid-template-columns: minmax(0, 1fr); padding-top: 1.75rem; }
+  html.mfg-on #primary { grid-row: auto; }
+  html.mfg-on #content-sidebar { grid-column: 1; grid-row: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+  html.mfg-on #secondary { grid-column: 1; grid-row: auto; }
+  html.mfg-on #primary-sidebar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+  html.mfg-on #footer-sidebar .widgets-grid-layout { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (max-width: 44em) {
+  html.mfg-on { --mfg-header-height: 12rem; --mfg-shell-width: calc(100% - 2rem); }
+  html.mfg-on #masthead { position: relative; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 1rem; }
+  html.mfg-on #masthead .site-title { padding-block: 1rem; }
+  html.mfg-on #masthead #search-container { grid-column: 1; grid-row: 2; }
+  html.mfg-on #primary-navigation { position: relative; grid-row: 3; }
+  html.mfg-on #primary-navigation .nav-menu { gap: 0 1rem; padding-top: .5rem; }
+  html.mfg-on #primary-navigation a { font-size: .75rem; padding-block: .625rem; }
+  html.mfg-on #primary-navigation .nav-menu > li { position: static; }
+  html.mfg-on #primary-navigation .sub-menu { width: 100%; }
+  html.mfg-on body:is(.home, .archive, .search) #content { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: .875rem; }
+  html.mfg-on #content .mfg-announcement { grid-template-columns: minmax(0, 1fr) 7rem; }
+  html.mfg-on #content .mfg-announcement > .entry-header { grid-template-columns: minmax(0, 1fr); }
+  html.mfg-on #content .mfg-announcement .entry-header > .entry-meta:last-child { grid-column: 1; grid-row: 3; }
+  html.mfg-on #content .mfg-announcement > .mfg-post-content > summary { padding-inline: .75rem; }
+  html.mfg-on #content .mfg-card .entry-title { font-size: .875rem; }
+  html.mfg-on #content .mfg-card > .entry-header { padding: .875rem; }
+  html.mfg-on #content .mfg-card > footer.entry-meta { min-height: 6rem; padding: .875rem; }
+  html.mfg-on #content-sidebar, html.mfg-on #primary-sidebar { grid-template-columns: minmax(0, 1fr); }
+  html.mfg-on #footer-sidebar .widgets-grid-layout { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  html.mfg-on #content .entry-header.mfg-detail-hero { grid-template-columns: 5rem minmax(0, 1fr); gap: 1rem; }
+  html.mfg-on body:is(.single, .page) #content > .hentry > .entry-header { padding: 1.25rem; }
+  html.mfg-on body:is(.single, .page) #content .entry-title { font-size: 1.5rem; }
+  html.mfg-on #content .entry-content { padding: 1.25rem; }
+  html.mfg-on #content :is(.comments-area, .page-content, .nav-links) { padding: 1rem; }
+  html.mfg-on #content :is(td, th) { padding: .5rem; }
+}
+html.mfg-on[data-mfg-view="list"] body:is(.home, .archive, .search) #content { grid-template-columns: minmax(0, 1fr); }
+html.mfg-on[data-mfg-view="list"] #content .mfg-announcement { grid-column: 1 / -1; }
+@media (max-width: 44em) {
+  html.mfg-on[data-mfg-view="list"] #content .mfg-card { grid-template-columns: 5rem minmax(0, 1fr); }
+  html.mfg-on[data-mfg-view="list"] #content .mfg-card .mfg-cover { width: 3.5rem; }
+  html.mfg-on[data-mfg-view="list"] #content .mfg-card > .entry-header { grid-column: 2; }
+  html.mfg-on[data-mfg-view="list"] #content .mfg-card > footer.entry-meta { grid-column: 1 / -1; grid-row: 2; padding: .75rem 1rem; border-left: 0; border-top: 1px solid var(--mfg-border); }
+  html.mfg-on[data-mfg-view="list"] #content .mfg-card > .mfg-post-content { grid-row: 3; }
+  html.mfg-on[data-mfg-view="list"] #content .mfg-card:not(:has(.mfg-cover)) > .entry-header { grid-column: 1 / -1; }
+}

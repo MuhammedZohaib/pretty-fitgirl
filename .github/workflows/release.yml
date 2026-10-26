@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to release (e.g. v1.5.0)'
+        required: false
+        default: ''
+      draft:
+        description: 'Create as draft release'
+        type: boolean
+        default: false
+      prerelease:
+        description: 'Mark as pre-release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run verification checks
+        run: npm run check
+
+      - name: Determine Version / Tag
+        id: vars
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building Pretty FitGirl for tag: $TAG (version: $VERSION)"
+
+      - name: Package extension
+        run: |
+          npm run pack
+          mkdir -p release-assets
+          cp dist/*.zip release-assets/
+          cp pretty-fitgirl.zip release-assets/
+
+      - name: Generate Checksums
+        working-directory: release-assets
+        run: |
+          sha256sum *.zip > checksums.sha256
+          cat checksums.sha256
+
+      - name: Create Release Notes Body
+        id: notes
+        run: |
+          cat << 'EOF' > release_body.md
+          ## Pretty FitGirl ${{ steps.vars.outputs.tag }}
+
+          An unofficial, minimal dark theme and UX enhancement browser extension for [FitGirl Repacks](https://fitgirl-repacks.site/).
+
+          ### 📦 Installation
+
+          1. Download `pretty-fitgirl-${{ steps.vars.outputs.tag }}.zip` below.
+          2. Extract the archive into a local folder.
+          3. Open your browser's extension manager (`chrome://extensions` or `edge://extensions`).
+          4. Enable **Developer mode**.
+          5. Click **Load unpacked** and select the extracted `pretty-fitgirl` directory.
+
+          ### 🔒 Integrity Checksums (SHA256)
+
+          Verify downloaded archives against the provided `checksums.sha256` file:
+          ```bash
+          sha256sum -c checksums.sha256
+          ```
+
+          ---
+          *Independent open-source theme. Not affiliated with FitGirl.*
+          EOF
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: Pretty FitGirl ${{ steps.vars.outputs.tag }}
+          body_path: release_body.md
+          draft: ${{ github.event.inputs.draft || false }}
+          prerelease: ${{ github.event.inputs.prerelease || false }}
+          files: |
+            release-assets/*.zip
+            release-assets/checksums.sha256
+          generate_release_notes: true

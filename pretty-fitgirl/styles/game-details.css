@@ -1,0 +1,329 @@
+/* Detail pages preserve every original section and its ordering. */
+html.mfg-on body:is(.single, .page) #content > .hentry { padding: 0; }
+html.mfg-on body:is(.single, .page) #content > .hentry > .entry-header {
+  padding: 2rem;
+  border-bottom: 1px solid var(--mfg-border);
+  border-radius: var(--geist-radius-md) var(--geist-radius-md) 0 0;
+  background: var(--geist-canvas-elevated);
+}
+html.mfg-on body:is(.single, .page) #content .entry-title {
+  margin: 0.75rem 0 1.125rem;
+  font-family: var(--mfg-heading);
+  font-size: clamp(1.75rem, 2.6vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: -1.28px;
+  color: var(--geist-ink);
+}
+html.mfg-on #content .entry-header.mfg-detail-hero {
+  display: grid;
+  grid-template-columns: clamp(6rem, 12vw, 10rem) minmax(0, 1fr);
+  column-gap: 1.75rem;
+  align-content: center;
+}
+html.mfg-on #content .mfg-detail-hero > .mfg-detail-art {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  align-self: center;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--mfg-border);
+  border-radius: var(--geist-radius-md);
+  object-fit: cover;
+}
+html.mfg-on #content .mfg-detail-hero > :is(.entry-title, .entry-meta) { grid-column: 2; }
+html.mfg-on #content .entry-content {
+  padding: 1.75rem 2rem 2.25rem;
+  color: var(--geist-ink);
+  font-size: 0.875rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+html.mfg-on #content .entry-content::after { content: ""; display: block; clear: both; }
+/* Native metadata paragraphs include a fixed inline height. Let text determine it. */
+html.mfg-on #content .entry-content > p { height: auto !important; min-height: 0; margin-bottom: 1.25rem; }
+html.mfg-on #content .entry-content > p:not(:has(img, iframe, video)) { max-width: var(--mfg-reading-width); }
+html.mfg-on #content .entry-content h2 {
+  clear: both;
+  margin: 2.5rem 0 1.25rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--mfg-border);
+  font-family: var(--mfg-heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  color: var(--geist-ink);
+}
+html.mfg-on #content .entry-content h3 {
+  clear: both;
+  margin: 2rem 0 1rem;
+  padding: 1rem 0 0.75rem;
+  border-bottom: 1px solid var(--mfg-border);
+  font-family: var(--mfg-heading);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.4px;
+  color: var(--geist-ink);
+}
+html.mfg-on #content .entry-content > h3:first-child { margin-top: 0; padding-top: 0; font-size: 1.0625rem; }
+html.mfg-on #content .entry-content h4 { margin: 1.5rem 0 0.75rem; font-family: var(--mfg-heading); font-size: 1rem; font-weight: 600; letter-spacing: -0.28px; color: var(--geist-ink); }
+html.mfg-on #content .entry-content .alignleft { margin: 0 1.5rem 1.25rem 0; border-radius: var(--geist-radius-sm); }
+html.mfg-on #content .entry-content :is(ul, ol) { margin: 0 0 1.5rem 1.25rem; }
+html.mfg-on #content .entry-content li { padding-left: 0.1875rem; margin-bottom: 0.5rem; }
+html.mfg-on #content .entry-content li::marker { color: var(--geist-mute); }
+html.mfg-on #content .entry-content img { height: auto; border-radius: var(--geist-radius-sm); }
+html.mfg-on #content .entry-content a { color: var(--geist-link); text-decoration: none; }
+html.mfg-on #content .entry-content a:hover { color: var(--geist-link-soft); }
+/* Keep author warnings prominent with sufficient contrast against dark surfaces. */
+html.mfg-on #content .entry-content [style*="color: red"],
+html.mfg-on #content .entry-content [style*="color:red"] { color: var(--geist-error) !important; }
+html.mfg-on #content .entry-content [style*="color: #339966"] { color: var(--geist-cyan) !important; }
+html.mfg-on #content .entry-content [style*="color: #808080"] { color: var(--geist-body) !important; }
+html.mfg-on #content :is(table, td, th) { border-color: var(--mfg-border); color: var(--geist-ink); }
+html.mfg-on #content table { width: 100%; margin: 1.5rem 0; table-layout: fixed; font-size: 0.8125rem; background: var(--geist-canvas-elevated); border: 1px solid var(--mfg-border); border-radius: var(--geist-radius-sm); }
+html.mfg-on #content :is(td, th) { padding: 0.75rem 1rem; overflow-wrap: anywhere; }
+html.mfg-on #content th { background: var(--geist-hairline-soft); font-weight: 600; text-align: left; }
+html.mfg-on #content tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+
+/* Only presentation changes: the original shortcode scripts own expand/collapse. */
+html.mfg-on #content .su-spoiler {
+  margin: 1rem 0;
+  border: 1px solid var(--mfg-border);
+  border-radius: var(--geist-radius-md);
+  background: var(--geist-canvas-elevated);
+  box-shadow: none;
+}
+html.mfg-on #content .su-spoiler-title {
+  min-height: 2.75rem;
+  padding: 0.8125rem 1rem 0.8125rem 2.5rem;
+  border: 0;
+  border-radius: var(--geist-radius-sm);
+  background: var(--geist-hairline-soft);
+  color: var(--geist-ink);
+  font: 500 0.8125rem/1.6 var(--mfg-font);
+  transition: all var(--mfg-speed);
+}
+html.mfg-on #content .su-spoiler-title:hover { background: var(--geist-hairline-strong); }
+html.mfg-on #content .su-spoiler-icon { width: 1.25rem; height: 1.25rem; top: 0.8125rem; left: 0.75rem; line-height: 1.25rem; }
+html.mfg-on #content .su-spoiler-icon::before { content: "−"; color: var(--geist-mute); font: 400 1.125rem/1.25rem var(--mfg-font); }
+html.mfg-on #content .su-spoiler-closed > .su-spoiler-title .su-spoiler-icon::before { content: "+"; }
+html.mfg-on #content .su-spoiler-content { padding: 1rem 1.25rem; border: 0; background: transparent; color: var(--geist-ink); font-size: 0.8125rem; line-height: 1.9; }
+html.mfg-on #content .su-spoiler.su-spoiler-closed > .su-spoiler-content { padding-top: 0; padding-bottom: 0; }
+
+/* Screenshot/gallery originals remain linked to their original destinations. */
+html.mfg-on #content .gallery { display: flex; flex-wrap: wrap; gap: 1rem; }
+html.mfg-on #content .gallery-item { flex: 1 1 11.25rem; max-width: 100%; margin: 0; }
+html.mfg-on #content .gallery-caption { position: static; max-height: none; padding: 0.625rem; background: var(--geist-hairline-soft); color: var(--geist-mute); font-size: 0.75rem; opacity: 1; }
+/* Comments Area (WordPress native, Tolstoy, Disqus) */
+html.mfg-on #content :is(.comments-area, .page-content, .nav-links) {
+  max-width: none;
+  margin: 1.5rem 0;
+  padding: 1.75rem 2rem;
+  border: 1px solid var(--mfg-border);
+  border-radius: var(--geist-radius-md);
+  background: var(--geist-canvas-elevated);
+}
+html.mfg-on #content .comments-title {
+  margin: 0 0 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--mfg-border);
+  font-family: var(--mfg-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  color: var(--geist-ink);
+}
+html.mfg-on #content .comment-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+html.mfg-on #content .comment-list .children {
+  margin: 1rem 0 0;
+  padding: 0 0 0 1.5rem;
+  list-style: none;
+  border-left: 1px solid var(--mfg-border);
+}
+html.mfg-on #content .comment-body {
+  margin-bottom: 1rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--mfg-border);
+  border-radius: var(--geist-radius-sm);
+  background: var(--geist-hairline-soft);
+  transition: border-color var(--mfg-speed);
+}
+html.mfg-on #content .comment-body:hover {
+  border-color: var(--geist-hairline-strong);
+}
+html.mfg-on #content .comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  color: var(--geist-mute);
+  font-size: 0.75rem;
+}
+html.mfg-on #content .comment-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+html.mfg-on #content .comment-author .fn {
+  font-weight: 600;
+  color: var(--geist-ink);
+  font-size: 0.875rem;
+  letter-spacing: -0.2px;
+}
+html.mfg-on #content .comment-author .fn a {
+  color: var(--geist-ink);
+  text-decoration: none;
+}
+html.mfg-on #content .comment-author .avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--geist-radius-full);
+  border: 1px solid var(--mfg-border);
+  object-fit: cover;
+}
+html.mfg-on #content .comment-author .says {
+  display: none;
+}
+html.mfg-on #content .comment-metadata {
+  font-family: var(--mfg-mono);
+  font-size: 0.6875rem;
+  color: var(--geist-mute);
+}
+html.mfg-on #content .comment-metadata a {
+  color: var(--geist-mute);
+  text-decoration: none;
+}
+html.mfg-on #content .comment-metadata a:hover {
+  color: var(--geist-ink);
+}
+html.mfg-on #content .comment-content {
+  color: var(--geist-body);
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+html.mfg-on #content .comment-content p {
+  margin: 0.5rem 0;
+}
+html.mfg-on #content .reply {
+  margin-top: 0.75rem;
+}
+html.mfg-on #content .reply a,
+html.mfg-on #content .comment-reply-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--mfg-border);
+  border-radius: var(--geist-radius-sm);
+  background: var(--geist-canvas-elevated);
+  color: var(--geist-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all var(--mfg-speed);
+}
+html.mfg-on #content :is(.reply a, .comment-reply-link):hover {
+  color: var(--geist-ink);
+  border-color: var(--geist-hairline-hover);
+  background: var(--geist-hairline-soft);
+}
+
+/* Comment Form / Respond */
+html.mfg-on #content .comment-respond {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--mfg-border);
+}
+html.mfg-on #content .comment-reply-title {
+  margin: 0 0 1rem;
+  font-family: var(--mfg-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  color: var(--geist-ink);
+}
+html.mfg-on #content #cancel-comment-reply-link {
+  font-size: 0.75rem;
+  color: var(--geist-error);
+  font-weight: 400;
+  margin-left: 0.75rem;
+  text-decoration: none;
+}
+html.mfg-on #content .comment-form {
+  display: grid;
+  gap: 1rem;
+}
+html.mfg-on #content .comment-form p {
+  margin: 0;
+}
+html.mfg-on #content .comment-form label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-family: var(--mfg-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--geist-mute);
+}
+html.mfg-on #content .comment-form :is(input:not([type="submit"]), textarea) {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--mfg-border);
+  border-radius: var(--geist-radius-sm);
+  background: var(--geist-canvas);
+  color: var(--geist-ink);
+  font-family: var(--mfg-font);
+  font-size: 0.875rem;
+  transition: border-color var(--mfg-speed);
+}
+html.mfg-on #content .comment-form :is(input:not([type="submit"]), textarea):focus {
+  border-color: var(--geist-link);
+  outline: 2px solid rgba(0, 112, 243, 0.25);
+}
+html.mfg-on #content .comment-form textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+html.mfg-on #content .comment-form .form-submit #submit,
+html.mfg-on #content .comment-form input[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 1.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--geist-radius-sm);
+  background: var(--geist-primary);
+  color: var(--geist-on-primary);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: opacity var(--mfg-speed);
+}
+html.mfg-on #content .comment-form .form-submit #submit:hover,
+html.mfg-on #content .comment-form input[type="submit"]:hover {
+  opacity: 0.9;
+}
+html.mfg-on #content :is(.logged-in-as, .must-log-in, .comment-notes) {
+  color: var(--geist-mute);
+  font-size: 0.8125rem;
+}
+html.mfg-on #content :is(.logged-in-as, .must-log-in) a {
+  color: var(--geist-link);
+  text-decoration: none;
+}
+html.mfg-on #content :is(.logged-in-as, .must-log-in) a:hover {
+  color: var(--geist-link-soft);
+  text-decoration: underline;
+}
+
+html.mfg-on #content #disqus_thread { width: 100%; margin: 1.5rem 0; }
+html.mfg-on #content .post-navigation a { display: block; padding: 1rem; border-radius: var(--geist-radius-sm); color: var(--geist-ink); text-decoration: none; }
+html.mfg-on #content .post-navigation a:hover { background: var(--geist-hairline-soft); }

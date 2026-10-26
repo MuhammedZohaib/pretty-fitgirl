@@ -1,0 +1,205 @@
+/* Native articles form the library; no duplicate replacement feed is created. */
+html.mfg-on body:is(.home, .archive, .search) #content {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 1.25rem;
+  row-gap: var(--mfg-row-gap);
+  align-items: stretch;
+}
+/* In case of 8 game elements, show 4 top and 4 bottom */
+@media (min-width: 44.0625em) {
+  html.mfg-on body:is(.home, .archive, .search) #content:is(.mfg-eight-games, [data-mfg-game-count="8"]) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+html.mfg-on #content .hentry {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--mfg-border);
+  border-radius: var(--geist-radius-md);
+  background: var(--geist-canvas-elevated);
+  box-shadow: var(--mfg-shadow);
+  transition: border-color var(--mfg-speed);
+}
+/* Twenty Fourteen clearfix pseudo-elements otherwise occupy real grid cells. */
+html.mfg-on #content .hentry::before,
+html.mfg-on #content .hentry::after { content: none; }
+html.mfg-on #content :is(.entry-header, .entry-content, .entry-summary, footer.entry-meta) {
+  max-width: none;
+  margin: 0;
+  padding: var(--mfg-space);
+  background: transparent;
+}
+html.mfg-on #content .entry-title {
+  margin: 0.625rem 0 0.75rem;
+  font-family: var(--mfg-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.4px;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+html.mfg-on #content .entry-title a { color: var(--geist-ink); text-decoration: none; }
+html.mfg-on #content .entry-title a:hover { color: var(--geist-link-soft); }
+html.mfg-on #content .entry-meta {
+  color: var(--geist-mute);
+  font-size: 0.75rem;
+  line-height: 1.7;
+  letter-spacing: 0;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+}
+html.mfg-on #content .entry-header .entry-meta { max-width: none; margin: 0; padding: 0; background: transparent; }
+html.mfg-on #content .entry-meta a { color: var(--geist-mute); text-decoration: none; }
+html.mfg-on #content .entry-meta a:hover { color: var(--geist-ink); }
+html.mfg-on #content .cat-links { display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; }
+html.mfg-on #content .cat-links a {
+  color: var(--geist-mute);
+  font-family: var(--mfg-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+html.mfg-on #content .cat-links a:hover { color: var(--geist-ink); }
+html.mfg-on #content .entry-meta :is(.entry-date, .byline, .comments-link) { margin-right: 0.5rem; }
+html.mfg-on #content .entry-meta .byline { display: inline; }
+/* Remove decorative theme icon-font glyphs and separators, retaining all links. */
+html.mfg-on #content .entry-meta :is(.entry-date, .byline, .comments-link)::before,
+html.mfg-on #content .entry-meta :is(.entry-date, .byline, .comments-link) a::before { content: none; }
+html.mfg-on #content .tag-links { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+html.mfg-on #content .tag-links a {
+  margin: 0;
+  padding: .125rem .375rem;
+  border: 1px solid var(--mfg-border);
+  border-radius: var(--geist-radius-sm);
+  background: var(--geist-canvas-elevated);
+  color: var(--geist-body);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: all var(--mfg-speed);
+}
+html.mfg-on #content .tag-links a:hover { color: var(--geist-ink); border-color: var(--geist-hairline-hover); text-decoration: none; }
+html.mfg-on #content .tag-links a::before,
+html.mfg-on #content .tag-links a::after { content: none; }
+
+/* All titles and metadata are kept: equal card heights come from flex layout. */
+html.mfg-on #content .mfg-card {
+  display: flex;
+  flex-direction: column;
+  border-color: var(--mfg-border);
+  transition: border-color var(--mfg-speed);
+}
+html.mfg-on #content .mfg-card:is(:hover, :focus-within) { border-color: var(--geist-hairline-strong); }
+html.mfg-on #content .mfg-card:focus-within { border-color: var(--geist-link); }
+html.mfg-on .mfg-cover {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: calc(var(--geist-radius-md) - 1px) calc(var(--geist-radius-md) - 1px) 0 0;
+  background: var(--geist-hairline-soft);
+}
+html.mfg-on #content .mfg-cover img {
+  display: block;
+  float: none;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  object-fit: cover;
+}
+html.mfg-on .mfg-cover::after {
+  content: "View repack ↗";
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  padding: 0.4375rem 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--geist-radius-pill);
+  background: var(--geist-primary);
+  color: var(--geist-on-primary);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(0.25rem);
+  transition: opacity var(--mfg-speed), transform var(--mfg-speed);
+}
+html.mfg-on .mfg-cover:is(:hover, :focus-visible)::after { opacity: 1; transform: translateY(0); }
+html.mfg-on #content .mfg-card > .entry-header { flex: 1; padding-bottom: 1rem; }
+html.mfg-on #content .mfg-card .entry-title { font-size: 0.9375rem; line-height: 1.55; font-weight: 600; letter-spacing: -0.4px; }
+html.mfg-on #content .mfg-card > footer.entry-meta { min-height: 4.75rem; padding-top: 0.875rem; padding-bottom: 1rem; border-top: 1px solid var(--mfg-border); }
+
+/* A real native disclosure keeps full original post nodes and their handlers. */
+html.mfg-on #content .mfg-post-content { min-width: 0; border-top: 1px solid var(--mfg-border); }
+html.mfg-on #content .mfg-post-content > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.625rem;
+  min-height: 2.625rem;
+  padding: 0.6875rem var(--mfg-space);
+  color: var(--geist-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.6;
+  cursor: pointer;
+  list-style: none;
+}
+html.mfg-on #content .mfg-post-content > summary::-webkit-details-marker { display: none; }
+html.mfg-on #content .mfg-post-content > summary::after { content: "+"; flex-shrink: 0; color: var(--geist-mute); font-size: 1rem; font-weight: 400; }
+html.mfg-on #content .mfg-post-content[open] > summary::after { content: "−"; }
+html.mfg-on #content .mfg-post-content > summary:hover { background: var(--geist-hairline-soft); color: var(--geist-ink); }
+html.mfg-on #content .mfg-post-content[open] > summary { color: var(--geist-ink); border-bottom: 1px solid var(--mfg-border); }
+html.mfg-on #content .mfg-post-content .entry-content { padding-top: 1.5rem; }
+
+/* Notices stay in their original sequence, with a smaller editorial treatment. */
+html.mfg-on #content .mfg-announcement {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8.5rem;
+  grid-column: 1 / -1;
+  align-items: center;
+  border-color: var(--mfg-border);
+  background: var(--geist-canvas-elevated);
+}
+html.mfg-on #content .mfg-announcement > .entry-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .375rem 1rem; min-width: 0; padding: .875rem 1rem; }
+html.mfg-on #content .mfg-announcement .entry-title { grid-column: 1; grid-row: 1; margin: 0; font-size: .9375rem; font-weight: 600; line-height: 1.4; letter-spacing: -0.4px; }
+html.mfg-on #content .mfg-announcement .entry-header > .entry-meta:first-child { grid-column: 1; grid-row: 2; }
+html.mfg-on #content .mfg-announcement .entry-header > .entry-meta:last-child { grid-column: 2; grid-row: 1 / 3; }
+html.mfg-on #content .mfg-announcement .cat-links a { color: var(--geist-mute); font-family: var(--mfg-mono); font-size: .625rem; font-weight: 500; letter-spacing: 0; text-transform: uppercase; }
+html.mfg-on #content .mfg-announcement .entry-meta { font-size: .6875rem; color: var(--geist-mute); }
+html.mfg-on #content .mfg-announcement > .mfg-post-content { align-self: stretch; display: flex; align-items: center; border-top: 0; }
+html.mfg-on #content .mfg-announcement > .mfg-post-content > summary { width: 100%; padding: .75rem 1rem; font-size: .75rem; }
+html.mfg-on #content .mfg-announcement:has(> .mfg-post-content[open]) { display: block; }
+html.mfg-on #content .mfg-announcement > .mfg-post-content[open] { display: block; border-top: 1px solid var(--mfg-border); }
+
+/* The site's search response is a text excerpt; it is never given fake cover art. */
+html.mfg-on body.search #content .mfg-card .entry-title { font-size: 1.125rem; }
+html.mfg-on body.search #content .entry-summary { padding-top: 0; color: var(--geist-body); font-size: 0.8125rem; line-height: 1.8; }
+html.mfg-on body.search #content .entry-summary p { margin-bottom: 0; }
+html.mfg-on body.search #content .more-link { display: inline-block; margin-top: 0.625rem; font-size: 0.75rem; font-weight: 500; color: var(--geist-link); }
+
+/* Persistent list view: cover, title/meta, and tags align in a single row. */
+html.mfg-on[data-mfg-view="list"] body:is(.home, .archive, .search) #content { grid-template-columns: 100%; }
+html.mfg-on[data-mfg-view="list"] #content .mfg-card {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) minmax(9rem, 22%);
+  align-items: center;
+}
+html.mfg-on[data-mfg-view="list"] #content .mfg-card .mfg-cover { grid-column: 1; grid-row: 1; width: 4rem; margin: .75rem; border-radius: var(--geist-radius-sm); }
+html.mfg-on[data-mfg-view="list"] #content .mfg-card > .entry-header { grid-column: 2; grid-row: 1; padding: 1rem; }
+html.mfg-on[data-mfg-view="list"] #content .mfg-card > footer.entry-meta { grid-column: 3; grid-row: 1; align-self: stretch; display: flex; align-items: center; padding: 1rem; border-top: 0; border-left: 1px solid var(--mfg-border); }
+html.mfg-on[data-mfg-view="list"] #content .mfg-card > .mfg-post-content { grid-column: 1 / -1; grid-row: 2; }
+html.mfg-on[data-mfg-view="list"] #content .mfg-card:not(:has(.mfg-cover)) > .entry-header { grid-column: 1 / 3; }
+html.mfg-on[data-mfg-view="list"] body.search #content .mfg-card > .entry-summary { grid-column: 1 / -1; }
+html.mfg-on[data-mfg-view="list"] #content .mfg-announcement { grid-column: 1 / -1; }
+html.mfg-on[data-mfg-density="compact"] #content .mfg-card .entry-title { margin-block: 0.5rem; font-size: 0.875rem; }
+html.mfg-on[data-mfg-density="compact"] #content .mfg-card .tag-links { gap: 0.25rem; }

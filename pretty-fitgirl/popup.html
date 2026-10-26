@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pretty FitGirl</title><link rel="icon" href="assets/logo.png" type="image/png"><link rel="stylesheet" href="popup.css"><script defer src="scripts/popup.js"></script></head>
+<body>
+  <header><img class="mark" src="assets/logo.png" alt="" width="44" height="44"><div><h1>Pretty FitGirl</h1><p>Minimal theme preferences</p></div></header>
+  <main>
+    <label class="theme"><span>Pretty theme<small>Restyle the original website</small></span><input id="enabled" type="checkbox" checked role="switch"></label>
+    <fieldset id="presentation"><legend>Page appearance</legend>
+      <label class="setting" for="view">Layout<select id="view"><option value="grid">Cover grid</option><option value="list">List</option></select></label>
+      <label class="setting" for="density">Spacing<select id="density"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label>
+    </fieldset>
+    <p id="status" role="status" aria-live="polite">Changes apply to open FitGirl tabs.</p>
+  </main>
+  <footer>Independent visual theme · No tracking</footer>
+</body></html>

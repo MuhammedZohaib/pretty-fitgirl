@@ -1,0 +1,246 @@
+/* Vercel Geist Design System - Dark Mode Comments Frame (Tolstoy Comments) */
+html.mfg-comments-on {
+  color-scheme: dark;
+  background: #000000;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100% !important;
+  -webkit-overflow-scrolling: touch;
+}
+html.mfg-comments-on body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100% !important;
+  -webkit-overflow-scrolling: touch;
+}
+html.mfg-comments-on body,
+html.mfg-comments-on #app,
+html.mfg-comments-on .s-bg-Background,
+html.mfg-comments-on .app-toplayout_container,
+html.mfg-comments-on .grid {
+  background: #000000 !important;
+  color: #ededed !important;
+  font-family: "Geist", "MFG Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+html.mfg-comments-on :is(#app, .app-toplayout_container, .grid, .app-comments) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100% !important;
+}
+
+html.mfg-comments-on :is(input, select, textarea, button, .textarea) {
+  font-family: inherit !important;
+}
+
+/* Header & Title */
+html.mfg-comments-on .app-header {
+  background: #000000 !important;
+  border-bottom: 1px solid #222222 !important;
+}
+html.mfg-comments-on .app-header .title-text {
+  font-family: "Geist", "MFG Manrope", sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.9375rem !important;
+  letter-spacing: -0.4px !important;
+  color: #ededed !important;
+}
+html.mfg-comments-on .app-header .buttons .button {
+  background: #0a0a0a !important;
+  border: 1px solid #222222 !important;
+  border-radius: 6px !important;
+  color: #a1a1a1 !important;
+  transition: all 140ms !important;
+}
+html.mfg-comments-on .app-header .buttons .button:hover {
+  background: #141414 !important;
+  border-color: #333333 !important;
+  color: #ededed !important;
+}
+/* The containing Comments disclosure provides the close control for this embedded mode */
+html.mfg-comments-on .app-header > .buttons:last-child:has(svg[data-key="times"]) {
+  display: none;
+}
+
+/* High contrast text */
+html.mfg-comments-on :is(.s-color-Black, .s-color-BlackDark, .app-comment__name) {
+  color: #ededed !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.2px !important;
+}
+
+/* Body copy */
+html.mfg-comments-on :is(.s-color-BlackMiddle, .app-comment__text, p) {
+  color: #a1a1a1 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.6 !important;
+}
+
+/* Metadata & Muted text */
+html.mfg-comments-on :is(.s-color-BlackLight, .app-comment__date, .app-comments-empty, .app-comments-closed) {
+  color: #707070 !important;
+  font-size: 0.75rem !important;
+}
+
+/* Links & Brand Accents */
+html.mfg-comments-on [class*="s-color-Main"],
+html.mfg-comments-on :is(a, .a) {
+  color: #0070f3 !important;
+  text-decoration: none !important;
+  transition: color 140ms !important;
+}
+html.mfg-comments-on :is(a:hover, .a:hover) {
+  color: #3291ff !important;
+  text-decoration: underline !important;
+  box-shadow: none !important;
+}
+
+/* Background layers & Hairline dividers */
+html.mfg-comments-on :is(.s-bg-BlackLight, .s-bg-BlackLight-before::before, .app-chat-line-top, .border) {
+  background: #222222 !important;
+}
+html.mfg-comments-on .s-bg-BlackMiddle {
+  background: #333333 !important;
+}
+html.mfg-comments-on .s-bg-BlackDark {
+  background: #444444 !important;
+}
+html.mfg-comments-on [class*="s-border-Black"],
+html.mfg-comments-on .s-border-Background,
+html.mfg-comments-on .app-border {
+  border-color: #222222 !important;
+}
+html.mfg-comments-on .s-bg-Background-before::before {
+  background: #000000 !important;
+}
+
+/* Brand colored elements */
+html.mfg-comments-on :is(.s-bg-Main, .s-bg-MainDark, .s-bg-MainMiddleDark) {
+  background: #0070f3 !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+}
+html.mfg-comments-on :is(.s-bg-MainLight, .s-bg-MainMiddle, .s-bg-MainLight-before::before) {
+  background: rgba(0, 112, 243, 0.1) !important;
+  border-color: rgba(0, 112, 243, 0.25) !important;
+}
+html.mfg-comments-on .s-bg-Main .s-color-Background {
+  color: #ffffff !important;
+}
+
+/* Comment Cards / Bubbles */
+html.mfg-comments-on :is(.app-comment__cloud, .app-comment__richpreview, .app-post__form) {
+  background: #0a0a0a !important;
+  border: 1px solid #222222 !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+  transition: border-color 140ms !important;
+}
+html.mfg-comments-on .app-comment__cloud:hover {
+  border-color: #333333 !important;
+}
+
+/* Form inputs & textareas */
+html.mfg-comments-on :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea, .textarea, .app-post__input) {
+  background: #0a0a0a !important;
+  color: #ededed !important;
+  border: 1px solid #222222 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-size: 0.875rem !important;
+  transition: border-color 140ms !important;
+}
+html.mfg-comments-on :is(input, textarea, .textarea)::placeholder,
+html.mfg-comments-on .textarea:placeholder {
+  color: #707070 !important;
+  opacity: 1 !important;
+}
+html.mfg-comments-on :focus-visible,
+html.mfg-comments-on :is(input, textarea, .textarea):focus {
+  outline: 2px solid #0070f3 !important;
+  outline-offset: 2px !important;
+  border-color: #0070f3 !important;
+}
+
+/* Buttons */
+html.mfg-comments-on .app-buttonload .border,
+html.mfg-comments-on .app-button,
+html.mfg-comments-on button:not(.close) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 2rem !important;
+  padding: 0 14px !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-weight: 500 !important;
+  font-size: 0.8125rem !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: opacity 140ms !important;
+}
+html.mfg-comments-on .app-buttonload .border:hover,
+html.mfg-comments-on .app-button:hover,
+html.mfg-comments-on button:not(.close):hover {
+  opacity: 0.9 !important;
+}
+
+/* Blockquote */
+html.mfg-comments-on blockquote {
+  background: #0e0e0e !important;
+  border-left: 2px solid #0070f3 !important;
+  border-radius: 0 6px 6px 0 !important;
+  color: #a1a1a1 !important;
+  padding: 8px 12px !important;
+  margin: 8px 0 !important;
+}
+
+/* Alerts */
+html.mfg-comments-on :is(.s-color-Alert, .app-alert) {
+  color: #ee0000 !important;
+}
+html.mfg-comments-on :is(.s-bg-Alert, .app-alert__block) {
+  background: rgba(238, 0, 0, 0.1) !important;
+  border: 1px solid rgba(238, 0, 0, 0.25) !important;
+  border-radius: 6px !important;
+}
+
+/* Selection */
+html.mfg-comments-on ::selection {
+  background: #0070f3 !important;
+  color: #ffffff !important;
+}
+
+/* Scrollbars */
+html.mfg-comments-on, html.mfg-comments-on * {
+  scrollbar-width: thin;
+  scrollbar-color: #262626 #000000 !important;
+}
+html.mfg-comments-on ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html.mfg-comments-on ::-webkit-scrollbar-track {
+  background: #000000 !important;
+}
+html.mfg-comments-on ::-webkit-scrollbar-thumb {
+  background: #262626 !important;
+  border: 1px solid #000000 !important;
+  border-radius: 6px !important;
+}
+html.mfg-comments-on ::-webkit-scrollbar-thumb:hover {
+  background: #383838 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.mfg-comments-on *,
+  html.mfg-comments-on *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
