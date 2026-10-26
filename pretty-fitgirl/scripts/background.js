@@ -13,7 +13,7 @@ const STEAM_SEARCH =
   'https://store.steampowered.com/api/storesearch/?cc=US&l=english&term=';
 const GOG_SEARCH =
   'https://catalog.gog.com/v1/catalog?limit=10&locale=en-US&query=';
-const CONCURRENCY = 4;
+const CONCURRENCY = 6;
 
 function cacheKey(title) {
   return CACHE_PREFIX + title.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -93,7 +93,7 @@ async function steamLookup(title) {
     const res = await fetch(STEAM_SEARCH + encodeURIComponent(title), {
       credentials: 'omit',
     });
-    if (!res.ok) return null;
+    if (!res.ok) throw new Error('steam ' + res.status); // transient: never cache as a miss
     const data = await res.json();
     const items = Array.isArray(data.items) ? data.items : [];
     let best = pickBestSteam(items, title);
@@ -134,8 +134,9 @@ async function steamLookup(title) {
       banner: steamHeroUrl(best.id),
       tiny: best.tiny_image || null,
     };
-  } catch {
-    return null;
+  } catch (err) {
+    if (err && /^steam \d+/.test(err.message)) throw err;
+    throw err; // network failure: let caller skip caching and allow retry
   }
 }
 
@@ -164,7 +165,13 @@ async function gogLookup(title) {
 
 async function resolveArtwork(title) {
   // 1. Steam first (best primary source, 600x900 vertical poster + header)
-  const steam = await steamLookup(title);
+  let steam = null;
+  let steamFailed = false;
+  try {
+    steam = await steamLookup(title);
+  } catch {
+    steamFailed = true;
+  }
   if (steam) {
     try {
       const gog = await gogLookup(title);
@@ -178,6 +185,7 @@ async function resolveArtwork(title) {
   // 2. GOG fallback for missing posters/games
   const gog = await gogLookup(title);
   if (gog) return gog;
+  if (steamFailed) throw new Error('steam unavailable'); // don't cache a false miss
 
   return null;
 }
@@ -196,25 +204,36 @@ async function resolveOne(title) {
   return data;
 }
 
+// Global limiter so many parallel messages never flood Steam/GOG.
+let active = 0;
+const waiting = [];
+function limited(fn) {
+  return new Promise((resolve) => {
+    const run = async () => {
+      active++;
+      try {
+        resolve(await fn());
+      } finally {
+        active--;
+        if (waiting.length) waiting.shift()();
+      }
+    };
+    if (active < CONCURRENCY) run();
+    else waiting.push(run);
+  });
+}
+
 async function resolveAll(titles) {
   const unique = [...new Set(titles)];
   const resolved = {};
-  let i = 0;
-  async function worker() {
-    while (i < unique.length) {
-      const t = unique[i++];
-      resolved[t] = await resolveOne(t);
-    }
-  }
-  await Promise.all(
-    Array.from({ length: Math.min(CONCURRENCY, unique.length) }, worker)
-  );
+  await Promise.all(unique.map((t) => limited(async () => {
+    resolved[t] = await resolveOne(t);
+  })));
 
   const out = {};
   for (const t of titles) out[t] = resolved[t] ?? null;
   return out;
 }
-
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === 'resolveGames' && Array.isArray(msg.titles)) {
     resolveAll(msg.titles)

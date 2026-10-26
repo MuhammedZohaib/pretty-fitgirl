@@ -109,7 +109,7 @@
             settled = true;
             resolve({});
           }
-        }, 1200);
+        }, 20000);
         chrome.runtime.sendMessage({ type: 'resolveGames', titles: queries }, (resp) => {
           if (settled) return;
           settled = true;
@@ -123,34 +123,17 @@
     });
   }
 
-  let pendingBatch = [];
-  let batchPromise = null;
+  const gameCache = new Map();
 
   function resolveOneGame(query) {
-    return new Promise((resolve) => {
-      pendingBatch.push({ query, resolve });
-      if (!batchPromise) {
-        batchPromise = Promise.resolve().then(() => {
-          const batch = pendingBatch;
-          pendingBatch = [];
-          batchPromise = null;
-          const uniqueQueries = [...new Set(batch.map((b) => b.query).filter(Boolean))];
-          if (!uniqueQueries.length) {
-            for (const item of batch) item.resolve(null);
-            return;
-          }
-          return resolveImages(uniqueQueries).then((results) => {
-            for (const item of batch) {
-              item.resolve(results ? results[item.query] : null);
-            }
-          }).catch(() => {
-            for (const item of batch) item.resolve(null);
-          });
-        });
-      }
-    });
+    if (!query) return Promise.resolve(null);
+    if (gameCache.has(query)) return gameCache.get(query);
+    const promise = resolveImages([query]).then((results) => results ? results[query] || null : null);
+    gameCache.set(query, promise);
+    // Never keep a failed lookup: allow a later card to retry it.
+    promise.then((value) => { if (!value) gameCache.delete(query); });
+    return promise;
   }
-
   function showSpinner(box) {
     if (!box || box.querySelector(".mfg-cover-spinner")) return;
     const spinner = document.createElement("div");
@@ -273,7 +256,7 @@
 
       const onOrigLoad = () => {
         hideSpinner(box);
-        setSourceBadge(box, directPoster ? "steam" : "original");
+        setSourceBadge(box, directPoster && preview.currentSrc === directPoster ? "steam" : "original");
       };
 
       if (preview.complete && preview.naturalWidth > 0) {
@@ -282,14 +265,20 @@
         preview.addEventListener("load", onOrigLoad, { once: true });
       }
 
+      let triedOriginal = !directPoster;
       preview.addEventListener("error", () => {
+        if (!triedOriginal) {
+          triedOriginal = true;
+          preview.src = originalSrc;
+          return;
+        }
         preview.remove();
         if (allowSteamFallback) {
           loadSteamCover(box, title);
         } else {
           hideSpinner(box);
         }
-      }, { once: true });
+      });
       box.append(preview);
     } else if (allowSteamFallback) {
       loadSteamCover(box, title);
