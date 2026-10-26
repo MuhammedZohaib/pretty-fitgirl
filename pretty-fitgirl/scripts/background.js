@@ -20,10 +20,18 @@ function cacheKey(title) {
 }
 
 function steamPosterUrl(appid) {
+  return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`;
+}
+
+function steamPosterAltUrl(appid) {
   return `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appid}/library_600x900.jpg`;
 }
 
 function steamHeaderUrl(appid) {
+  return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`;
+}
+
+function steamHeaderAltUrl(appid) {
   return `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appid}/header.jpg`;
 }
 
@@ -120,7 +128,9 @@ async function steamLookup(title) {
       appid: best.id,
       name: best.name || title,
       poster: steamPosterUrl(best.id),
+      posterAlt: steamPosterAltUrl(best.id),
       header: steamHeaderUrl(best.id),
+      headerAlt: steamHeaderAltUrl(best.id),
       banner: steamHeroUrl(best.id),
       tiny: best.tiny_image || null,
     };
@@ -155,7 +165,15 @@ async function gogLookup(title) {
 async function resolveArtwork(title) {
   // 1. Steam first (best primary source, 600x900 vertical poster + header)
   const steam = await steamLookup(title);
-  if (steam) return steam;
+  if (steam) {
+    try {
+      const gog = await gogLookup(title);
+      if (gog?.poster) steam.gogPoster = gog.poster;
+    } catch {
+      // ignore gog lookup error
+    }
+    return steam;
+  }
 
   // 2. GOG fallback for missing posters/games
   const gog = await gogLookup(title);
