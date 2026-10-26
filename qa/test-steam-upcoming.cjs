@@ -29,6 +29,12 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
       if (req.isNavigationRequest() && req.frame() === page.mainFrame()) {
         return route.fulfill({ contentType: 'text/html', body: homeHtml });
       }
+      if (req.resourceType() === 'image') {
+        return route.fulfill({
+          contentType: 'image/png',
+          body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64')
+        });
+      }
       return route.abort();
     });
 
@@ -43,15 +49,12 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
 
     await page.addStyleTag({ content: css });
 
-    const messages = [];
     await page.evaluate(() => {
-      window.messages = [];
       const listeners = [];
       const data = {};
       window.chrome = {
         runtime: {
           sendMessage: (msg, cb) => {
-            window.messages.push(msg);
             if (msg.type === 'resolveGames') {
               const res = {};
               for (const title of msg.titles) {
@@ -91,7 +94,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
     });
 
     await page.addScriptTag({ content: js });
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
 
     // Verify Upcoming Repacks enhancement as Cards
     const upcomingCards = await page.locator('.mfg-upcoming-card-item').count();
@@ -116,9 +119,18 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
     const actionBtn = firstCard.locator('.mfg-upcoming-action-btn');
     assert(await actionBtn.count() > 0, 'Action gameplay button is missing');
 
-    // Test cover fallback in repack cards
-    const coversWithFallback = await page.locator('.mfg-cover img.mfg-steam-fallback').count();
-    console.log(`Repack cards with Steam fallback cover: ${coversWithFallback}`);
+    // Check posterBox HTML
+    const posterHtml = await firstCard.locator('.mfg-upcoming-poster-box').innerHTML();
+    console.log('Sample poster box HTML:\n', posterHtml);
+
+    // Verify Source Badges
+    const originalBadges = await page.locator('.mfg-cover-source-original').count();
+    console.log(`Original cover badges: ${originalBadges}`);
+    assert(originalBadges > 0, 'No original cover badges found');
+
+    const steamBadges = await page.locator('.mfg-cover-source-steam').count();
+    console.log(`Steam source badges: ${steamBadges}`);
+    assert(steamBadges > 0, 'No Steam source badges found');
 
     // Verify Clean Restoration on Disable
     await page.evaluate(() => window.changePreferences({ enabled: false }));

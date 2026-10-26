@@ -132,17 +132,58 @@
     });
   }
 
+  function showSpinner(box) {
+    if (!box || box.querySelector(".mfg-cover-spinner")) return;
+    const spinner = document.createElement("div");
+    spinner.className = "mfg-cover-spinner";
+    spinner.setAttribute("aria-hidden", "true");
+    const ring = document.createElement("div");
+    ring.className = "mfg-spinner-ring";
+    spinner.append(ring);
+    box.append(spinner);
+  }
+
+  function hideSpinner(box) {
+    if (!box) return;
+    box.querySelectorAll(".mfg-cover-spinner").forEach((s) => s.remove());
+  }
+
+  function setSourceBadge(box, source) {
+    if (!box || !source) return;
+    box.querySelector(".mfg-cover-badge")?.remove();
+    const badge = document.createElement("span");
+    const s = String(source).toLowerCase();
+    badge.className = `mfg-cover-badge mfg-cover-source-${s}`;
+    badge.textContent = s === "original" ? "Original" : (s === "gog" ? "GOG" : "Steam");
+    badge.title = s === "original" ? "Original cover art" : `Cover from ${badge.textContent}`;
+    box.append(badge);
+  }
+
   function loadSteamCover(box, title) {
     const rawTitle = title || '';
     const query = searchName(rawTitle);
-    if (!query) return;
+    if (!query) {
+      hideSpinner(box);
+      return;
+    }
+
+    showSpinner(box);
 
     resolveOneGame(query).then((image) => {
-      if (!image) return;
+      if (!image) {
+        hideSpinner(box);
+        return;
+      }
       const primary = image.poster || image.header || image.tiny;
-      if (!primary) return;
+      if (!primary) {
+        hideSpinner(box);
+        return;
+      }
       if (!box.isConnected) return;
-      if (box.querySelector("img:not(.mfg-steam-fallback)")) return;
+      if (box.querySelector("img:not(.mfg-steam-fallback)")) {
+        hideSpinner(box);
+        return;
+      }
 
       let steamImg = box.querySelector("img.mfg-steam-fallback");
       if (!steamImg) {
@@ -152,6 +193,18 @@
         steamImg.loading = "lazy";
         steamImg.decoding = "async";
         steamImg.src = primary;
+
+        const onFallbackLoad = () => {
+          hideSpinner(box);
+          setSourceBadge(box, image.source || "steam");
+        };
+
+        if (steamImg.complete && steamImg.naturalWidth > 0) {
+          onFallbackLoad();
+        } else {
+          steamImg.addEventListener("load", onFallbackLoad, { once: true });
+        }
+
         steamImg.addEventListener("error", () => {
           if (image.header && steamImg.src !== image.header) {
             steamImg.src = image.header;
@@ -159,14 +212,17 @@
             steamImg.src = image.tiny;
           } else {
             steamImg.remove();
+            hideSpinner(box);
           }
         }, { once: true });
         box.append(steamImg);
       }
-    }).catch(() => {});
+    }).catch(() => {
+      hideSpinner(box);
+    });
   }
 
-  function cover(image, url, title, className = "mfg-cover") {
+  function cover(image, url, title, className = "mfg-cover", allowSteamFallback = true) {
     const box = document.createElement(url ? "a" : "div");
     box.className = className;
     if (url) { box.href = url; box.setAttribute("aria-label", title); }
@@ -174,6 +230,7 @@
 
     const hasOriginal = Boolean(image?.getAttribute("src"));
     if (hasOriginal) {
+      showSpinner(box);
       const preview = document.createElement("img");
       for (const attribute of ["src", "srcset", "sizes"]) {
         if (image.hasAttribute(attribute)) preview.setAttribute(attribute, image.getAttribute(attribute));
@@ -181,12 +238,28 @@
       preview.alt = "";
       preview.loading = "lazy";
       preview.decoding = "async";
+
+      const onOrigLoad = () => {
+        hideSpinner(box);
+        setSourceBadge(box, "original");
+      };
+
+      if (preview.complete && preview.naturalWidth > 0) {
+        onOrigLoad();
+      } else {
+        preview.addEventListener("load", onOrigLoad, { once: true });
+      }
+
       preview.addEventListener("error", () => {
         preview.remove();
-        loadSteamCover(box, title);
+        if (allowSteamFallback) {
+          loadSteamCover(box, title);
+        } else {
+          hideSpinner(box);
+        }
       }, { once: true });
       box.append(preview);
-    } else {
+    } else if (allowSteamFallback) {
       loadSteamCover(box, title);
     }
     return box;
@@ -887,5 +960,5 @@
     }
   }
 
-  globalThis.MFGRepack = { metadata, placeholder, cover, summary, enhanceDetail, searchName, gameName, resolveImages };
+  globalThis.MFGRepack = { metadata, placeholder, cover, summary, enhanceDetail, searchName, gameName, resolveImages, showSpinner, hideSpinner, setSourceBadge };
 })();

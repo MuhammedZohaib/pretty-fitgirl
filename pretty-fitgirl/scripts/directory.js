@@ -50,8 +50,16 @@
             const src = await imageFor(url);
             if (!active || !src) return;
             const image = document.createElement("img"); image.src = src; image.alt = ""; image.loading = "lazy"; image.decoding = "async";
+            const onOrigLoad = () => {
+              MFGRepack.hideSpinner(frame);
+              MFGRepack.setSourceBadge(frame, "original");
+            };
+            if (image.complete && image.naturalWidth > 0) {
+              onOrigLoad();
+            } else {
+              image.addEventListener("load", onOrigLoad, { once: true });
+            }
             image.addEventListener("error", () => image.remove(), { once: true });
-            frame.querySelector("img.mfg-steam-fallback")?.remove();
             frame.append(image); card.dataset.artwork = "loaded";
           } catch { /* Leave the consistent placeholder when the source is unavailable. */ }
           finally { running--; pump(); }
@@ -68,7 +76,7 @@
       const link = item.querySelector(":scope > a[href]"); if (!link) continue;
       const originalClass = item.getAttribute("class");
       item.classList.add("mfg-directory-card");
-      const frame = MFGRepack.cover(null, link.href, link.textContent.trim());
+      const frame = MFGRepack.cover(null, link.href, link.textContent.trim(), "mfg-cover", false);
       const heading = document.createElement("h2"); heading.className = "mfg-directory-title";
       link.before(heading); heading.append(link); item.prepend(frame);
       const originalTitle = link.getAttribute("title"); link.title = link.textContent.trim();

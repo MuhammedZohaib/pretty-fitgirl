@@ -208,6 +208,7 @@
     const posterBox = document.createElement('div');
     posterBox.className = 'mfg-upcoming-poster-box';
     posterBox.append(MFGRepack.placeholder());
+    MFGRepack.showSpinner(posterBox);
 
     const posterSrc = image && (image.poster || image.header || image.tiny);
     if (posterSrc) {
@@ -217,6 +218,15 @@
       img.decoding = 'async';
       img.alt = query;
       img.src = posterSrc;
+      const onPosterLoad = () => {
+        MFGRepack.hideSpinner(posterBox);
+        MFGRepack.setSourceBadge(posterBox, image.source || 'steam');
+      };
+      if (img.complete && img.naturalWidth > 0) {
+        onPosterLoad();
+      } else {
+        img.addEventListener('load', onPosterLoad, { once: true });
+      }
       img.addEventListener('error', () => {
         if (image.header && img.src !== image.header) {
           img.src = image.header;
@@ -224,6 +234,7 @@
           img.src = image.tiny;
         } else {
           img.remove();
+          MFGRepack.hideSpinner(posterBox);
         }
       }, { once: true });
       posterBox.prepend(img);
@@ -358,24 +369,29 @@
 
     MFGRepack.resolveImages(queries).then((images) => {
       if (!document.documentElement.classList.contains('mfg-on')) return;
-      if (!images) return;
       for (const { item, card } of cards) {
-        const imgInfo = images[item.query];
-        if (!imgInfo) continue;
         const posterBox = card.querySelector('.mfg-upcoming-poster-box');
         if (!posterBox) continue;
 
-        const posterSrc = imgInfo.poster || imgInfo.header || imgInfo.tiny;
-        if (!posterSrc) continue;
+        const imgInfo = images ? images[item.query] : null;
+        const posterSrc = imgInfo && (imgInfo.poster || imgInfo.header || imgInfo.tiny);
+        if (!posterSrc) {
+          MFGRepack.hideSpinner(posterBox);
+          continue;
+        }
 
         let img = posterBox.querySelector('img.mfg-upcoming-poster-img');
+        const onPosterLoad = () => {
+          MFGRepack.hideSpinner(posterBox);
+          MFGRepack.setSourceBadge(posterBox, imgInfo.source || 'steam');
+        };
+
         if (!img) {
           img = document.createElement('img');
           img.className = 'mfg-upcoming-poster-img';
-          img.loading = 'lazy';
           img.decoding = 'async';
           img.alt = item.query;
-          img.src = posterSrc;
+          img.addEventListener('load', onPosterLoad, { once: true });
           img.addEventListener('error', () => {
             if (imgInfo.header && img.src !== imgInfo.header) {
               img.src = imgInfo.header;
@@ -383,14 +399,21 @@
               img.src = imgInfo.tiny;
             } else {
               img.remove();
+              MFGRepack.hideSpinner(posterBox);
             }
           }, { once: true });
+          img.src = posterSrc;
+          if (img.complete && img.naturalWidth > 0) {
+            onPosterLoad();
+          }
           posterBox.prepend(img);
         } else {
           img.src = posterSrc;
         }
       }
-    }).catch(() => {});
+    }).catch(() => {
+      cards.forEach(({ card }) => MFGRepack.hideSpinner(card.querySelector('.mfg-upcoming-poster-box')));
+    });
 
     return true;
   }
