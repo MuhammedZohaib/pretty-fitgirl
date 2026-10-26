@@ -1,23 +1,34 @@
 /**
  * Background service worker.
  *
- * Resolves a game title to a Steam store image using Steam's public store
- * search endpoint (no API key required). Results are cached in
- * chrome.storage.local so the page load stays fast and we stay polite to Steam.
+ * Resolves a game title to a vertical poster or banner using Steam's public store
+ * search endpoint with fallback to GOG's catalog API (no API keys required).
+ * Results are cached in chrome.storage.local for 7 days so page loads stay fast
+ * and we remain polite to Steam and GOG.
  */
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const CACHE_PREFIX = 'steam:';
 const STEAM_SEARCH =
   'https://store.steampowered.com/api/storesearch/?cc=US&l=english&term=';
+const GOG_SEARCH =
+  'https://catalog.gog.com/v1/catalog?limit=10&locale=en-US&query=';
 const CONCURRENCY = 4;
 
 function cacheKey(title) {
   return CACHE_PREFIX + title.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-function headerUrl(appid) {
-  return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`;
+function steamPosterUrl(appid) {
+  return `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appid}/library_600x900.jpg`;
+}
+
+function steamHeaderUrl(appid) {
+  return `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appid}/header.jpg`;
+}
+
+function steamHeroUrl(appid) {
+  return `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appid}/library_hero.jpg`;
 }
 
 async function cacheGet(key) {
@@ -39,9 +50,12 @@ async function cacheSet(key, data) {
   }
 }
 
-/** Choose the best store-search item for a title. */
-function pickBest(items, title) {
-  const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+function norm(s) {
+  return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/** Choose the best store-search item for a title on Steam. */
+function pickBestSteam(items, title) {
   const want = norm(title);
   let startsMatch = null;
   for (const it of items) {
@@ -54,39 +68,100 @@ function pickBest(items, title) {
   return items.find((it) => it && it.id) || null; // else Steam's top relevance hit
 }
 
-async function steamLookup(title) {
-  const res = await fetch(STEAM_SEARCH + encodeURIComponent(title), {
-    credentials: 'omit',
-  });
-  if (!res.ok) throw new Error('steam ' + res.status);
-  const data = await res.json();
-  const items = Array.isArray(data.items) ? data.items : [];
-  let best = pickBest(items, title);
+/** Choose the best matching product on GOG. */
+function pickBestGog(products, title) {
+  const want = norm(title);
+  let match = products.find((p) => norm(p.title) === want);
+  if (!match) {
+    match = products.find(
+      (p) => norm(p.title).startsWith(want) || want.startsWith(norm(p.title))
+    );
+  }
+  return match || null;
+}
 
-  if (!best || !best.id) {
-    // If Edition or subtitle caused a 0 hit, try base game name before edition/subtitle
-    const base = title.replace(/[:–—-]\s*(?:Ultimate|Deluxe|Definitive|Collector|Special|Enhanced|Remastered|Digital|Standard)?\s*Edition.*$/i, '').trim();
-    if (base && base !== title) {
-      try {
-        const baseRes = await fetch(STEAM_SEARCH + encodeURIComponent(base), { credentials: 'omit' });
-        if (baseRes.ok) {
-          const baseData = await baseRes.json();
-          const baseItems = Array.isArray(baseData.items) ? baseData.items : [];
-          best = pickBest(baseItems, base);
+async function steamLookup(title) {
+  try {
+    const res = await fetch(STEAM_SEARCH + encodeURIComponent(title), {
+      credentials: 'omit',
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    let best = pickBestSteam(items, title);
+
+    if (!best || !best.id) {
+      // If Edition or subtitle caused a 0 hit, try base game name before edition/subtitle
+      const base = title
+        .replace(
+          /[:–—-]\s*(?:Ultimate|Deluxe|Definitive|Collector|Special|Enhanced|Remastered|Digital|Standard)?\s*Edition.*$/i,
+          ''
+        )
+        .trim();
+      if (base && base !== title) {
+        try {
+          const baseRes = await fetch(STEAM_SEARCH + encodeURIComponent(base), {
+            credentials: 'omit',
+          });
+          if (baseRes.ok) {
+            const baseData = await baseRes.json();
+            const baseItems = Array.isArray(baseData.items) ? baseData.items : [];
+            best = pickBestSteam(baseItems, base);
+          }
+        } catch {
+          // ignore fallback network error
         }
-      } catch {
-        // ignore fallback network error
       }
     }
-  }
 
-  if (!best || !best.id) return null;
-  return {
-    appid: best.id,
-    name: best.name || title,
-    header: headerUrl(best.id),
-    tiny: best.tiny_image || null,
-  };
+    if (!best || !best.id) return null;
+    return {
+      source: 'steam',
+      appid: best.id,
+      name: best.name || title,
+      poster: steamPosterUrl(best.id),
+      header: steamHeaderUrl(best.id),
+      banner: steamHeroUrl(best.id),
+      tiny: best.tiny_image || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function gogLookup(title) {
+  try {
+    const q = encodeURIComponent('like:' + title);
+    const res = await fetch(GOG_SEARCH + q, { credentials: 'omit' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const products = Array.isArray(data.products) ? data.products : [];
+    const best = pickBestGog(products, title);
+    if (!best) return null;
+
+    return {
+      source: 'gog',
+      name: best.title || title,
+      poster: best.coverVertical || null,
+      banner: best.coverHorizontal || null,
+      header: best.coverHorizontal || null,
+      tiny: null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function resolveArtwork(title) {
+  // 1. Steam first (best primary source, 600x900 vertical poster + header)
+  const steam = await steamLookup(title);
+  if (steam) return steam;
+
+  // 2. GOG fallback for missing posters/games
+  const gog = await gogLookup(title);
+  if (gog) return gog;
+
+  return null;
 }
 
 async function resolveOne(title) {
@@ -95,7 +170,7 @@ async function resolveOne(title) {
   if (cached !== undefined) return cached; // cached hit OR cached known-miss
   let data = null;
   try {
-    data = await steamLookup(title);
+    data = await resolveArtwork(title);
   } catch {
     return null; // transient failure: don't cache, retry next time
   }

@@ -138,7 +138,9 @@
     if (!query) return;
 
     resolveOneGame(query).then((image) => {
-      if (!image || (!image.header && !image.tiny)) return;
+      if (!image) return;
+      const primary = image.poster || image.header || image.tiny;
+      if (!primary) return;
       if (!box.isConnected) return;
       if (box.querySelector("img:not(.mfg-steam-fallback)")) return;
 
@@ -149,9 +151,11 @@
         steamImg.alt = query;
         steamImg.loading = "lazy";
         steamImg.decoding = "async";
-        steamImg.src = image.header || image.tiny;
+        steamImg.src = primary;
         steamImg.addEventListener("error", () => {
-          if (image.tiny && steamImg.src !== image.tiny) {
+          if (image.header && steamImg.src !== image.header) {
+            steamImg.src = image.header;
+          } else if (image.tiny && steamImg.src !== image.tiny) {
             steamImg.src = image.tiny;
           } else {
             steamImg.remove();

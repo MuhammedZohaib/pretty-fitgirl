@@ -8,7 +8,8 @@
     "storage"
   ],
   "host_permissions": [
-    "https://store.steampowered.com/*"
+    "https://store.steampowered.com/*",
+    "https://catalog.gog.com/*"
   ],
   "background": {
     "service_worker": "scripts/background.js"

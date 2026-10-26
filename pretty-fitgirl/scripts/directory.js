@@ -50,7 +50,9 @@
             const src = await imageFor(url);
             if (!active || !src) return;
             const image = document.createElement("img"); image.src = src; image.alt = ""; image.loading = "lazy"; image.decoding = "async";
-            image.addEventListener("error", () => image.remove(), { once: true }); frame.append(image); card.dataset.artwork = "loaded";
+            image.addEventListener("error", () => image.remove(), { once: true });
+            frame.querySelector("img.mfg-steam-fallback")?.remove();
+            frame.append(image); card.dataset.artwork = "loaded";
           } catch { /* Leave the consistent placeholder when the source is unavailable. */ }
           finally { running--; pump(); }
         })();

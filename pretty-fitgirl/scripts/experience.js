@@ -183,60 +183,114 @@
     );
   }
 
-  function decorateUpcomingItem(span, display, image, changes) {
-    if (span.dataset.fgyt) return;
+  function decorateUpcomingCard(span, display, image) {
+    if (span.dataset.fgyt) return null;
     span.dataset.fgyt = '1';
 
     const query = MFGRepack.searchName(display);
-    const a = document.createElement('a');
-    a.href = youtubeUrl(query + ' game');
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.title = 'Most-viewed gameplay video for “' + query + '”';
+    const ytUrl = youtubeUrl(query + ' game');
 
-    const src = image && (image.header || image.tiny);
-    if (src) {
-      a.className = 'fgyt-chip';
+    const versionMatch = display.match(/\b(v[0-9.]+|Build\s+[0-9]+)\b/i);
+    const version = versionMatch ? versionMatch[0] : null;
+    const isDelayed = /delayed/i.test(display);
+
+    const card = document.createElement('article');
+    card.className = 'mfg-upcoming-card-item';
+
+    // Vertical Poster Frame (aspect ratio 2/3)
+    const posterLink = document.createElement('a');
+    posterLink.className = 'mfg-upcoming-poster-link';
+    posterLink.href = ytUrl;
+    posterLink.target = '_blank';
+    posterLink.rel = 'noopener noreferrer';
+    posterLink.setAttribute('aria-label', `Watch gameplay for ${query} on YouTube`);
+
+    const posterBox = document.createElement('div');
+    posterBox.className = 'mfg-upcoming-poster-box';
+    posterBox.append(MFGRepack.placeholder());
+
+    const posterSrc = image && (image.poster || image.header || image.tiny);
+    if (posterSrc) {
       const img = document.createElement('img');
+      img.className = 'mfg-upcoming-poster-img';
       img.loading = 'lazy';
       img.decoding = 'async';
       img.alt = query;
-      img.src = src;
+      img.src = posterSrc;
       img.addEventListener('error', () => {
-        if (image.tiny && img.src !== image.tiny) {
+        if (image.header && img.src !== image.header) {
+          img.src = image.header;
+        } else if (image.tiny && img.src !== image.tiny) {
           img.src = image.tiny;
         } else {
-          a.className = 'fgyt-chip fgyt-chip-empty';
-          a.textContent = '▶';
           img.remove();
         }
-      });
-      a.appendChild(img);
-    } else {
-      a.className = 'fgyt-chip fgyt-chip-empty';
-      a.textContent = '▶';
+      }, { once: true });
+      posterBox.prepend(img);
     }
 
-    const row = document.createElement('div');
-    row.className = 'fgyt-row';
-    span.parentNode.insertBefore(row, span);
-    row.appendChild(a);
-    row.appendChild(span);
+    const playBadge = document.createElement('div');
+    playBadge.className = 'mfg-upcoming-play-badge';
+    playBadge.setAttribute('aria-hidden', 'true');
+    const playIcon = document.createElement('span');
+    playIcon.className = 'mfg-play-icon';
+    playIcon.textContent = '▶';
+    const playText = document.createElement('span');
+    playText.className = 'mfg-play-label';
+    playText.textContent = 'Gameplay';
+    playBadge.append(playIcon, playText);
+    posterBox.append(playBadge);
+    posterLink.append(posterBox);
 
-    let n = row.nextSibling;
-    while (n && n.nodeType === Node.TEXT_NODE && !n.textContent.trim()) n = n.nextSibling;
-    let br = null;
-    if (n && n.nodeName === 'BR') {
-      br = n;
-      n.remove();
+    // Card Details & Info
+    const info = document.createElement('div');
+    info.className = 'mfg-upcoming-info';
+
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'mfg-upcoming-title';
+    titleEl.title = display;
+    titleEl.append(span);
+    info.append(titleEl);
+
+    const badges = document.createElement('div');
+    badges.className = 'mfg-upcoming-badges';
+
+    const upcomingBadge = document.createElement('span');
+    upcomingBadge.className = 'mfg-badge mfg-badge-upcoming';
+    upcomingBadge.textContent = 'Upcoming';
+    badges.append(upcomingBadge);
+
+    if (version) {
+      const verBadge = document.createElement('span');
+      verBadge.className = 'mfg-badge mfg-badge-version';
+      verBadge.textContent = version;
+      badges.append(verBadge);
     }
 
-    changes.push(() => {
-      row.before(span);
-      if (br) span.after(br);
-      row.remove();
-      delete span.dataset.fgyt;
-    });
+    if (isDelayed) {
+      const delayBadge = document.createElement('span');
+      delayBadge.className = 'mfg-badge mfg-badge-delayed';
+      delayBadge.textContent = 'Delayed';
+      badges.append(delayBadge);
+    }
+    info.append(badges);
+
+    const actionBtn = document.createElement('a');
+    actionBtn.className = 'mfg-upcoming-action-btn';
+    actionBtn.href = ytUrl;
+    actionBtn.target = '_blank';
+    actionBtn.rel = 'noopener noreferrer';
+    const btnText = document.createElement('span');
+    btnText.textContent = 'Watch gameplay';
+    const btnArrow = document.createElement('span');
+    btnArrow.className = 'mfg-arrow';
+    btnArrow.setAttribute('aria-hidden', 'true');
+    btnArrow.textContent = '↗';
+    actionBtn.append(btnText, btnArrow);
+    info.append(actionBtn);
+
+    card.append(posterLink, info);
+    return card;
   }
 
   function upcoming(content, changes) {
@@ -245,8 +299,35 @@
     const spans = gameSpans(article);
     if (!spans.length) return false;
 
+    const origArtClass = article.getAttribute('class');
     article.classList.add('mfg-upcoming-card');
-    changes.push(() => article.classList.remove('mfg-upcoming-card'));
+    changes.push(() => origArtClass === null ? article.removeAttribute('class') : article.setAttribute('class', origArtClass));
+
+    const container = spans[0].parentElement;
+    if (container) {
+      const origContClass = container.getAttribute('class');
+      container.classList.add('mfg-upcoming-container');
+      changes.push(() => origContClass === null ? container.removeAttribute('class') : container.setAttribute('class', origContClass));
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'mfg-upcoming-grid';
+
+    const firstSpan = spans[0];
+    firstSpan.parentNode.insertBefore(grid, firstSpan);
+    changes.push(() => grid.remove());
+
+    const brList = [];
+    for (const span of spans) {
+      let n = span.nextSibling;
+      while (n && n.nodeType === Node.TEXT_NODE && !n.textContent.trim()) n = n.nextSibling;
+      if (n && n.nodeName === 'BR') {
+        brList.push({ span, br: n });
+        n.hidden = true;
+      } else {
+        brList.push({ span, br: null });
+      }
+    }
 
     const items = spans.map((span) => {
       const display = MFGRepack.gameName(span.textContent);
@@ -254,17 +335,62 @@
     });
     const queries = [...new Set(items.map((i) => i.query).filter(Boolean))];
 
-    MFGRepack.resolveImages(queries).then((images) => {
-      if (!document.documentElement.classList.contains('mfg-on')) return;
-      for (const it of items) {
-        decorateUpcomingItem(it.span, it.display, images ? images[it.query] : null, changes);
+    const cards = [];
+    for (const it of items) {
+      const card = decorateUpcomingCard(it.span, it.display, null);
+      if (card) {
+        grid.append(card);
+        cards.push({ item: it, card });
       }
-    }).catch(() => {
-      if (!document.documentElement.classList.contains('mfg-on')) return;
-      for (const it of items) {
-        decorateUpcomingItem(it.span, it.display, null, changes);
+    }
+
+    changes.push(() => {
+      for (const { span, br } of brList) {
+        if (br) {
+          br.before(span);
+          br.removeAttribute('hidden');
+        } else {
+          grid.before(span);
+        }
+        delete span.dataset.fgyt;
       }
     });
+
+    MFGRepack.resolveImages(queries).then((images) => {
+      if (!document.documentElement.classList.contains('mfg-on')) return;
+      if (!images) return;
+      for (const { item, card } of cards) {
+        const imgInfo = images[item.query];
+        if (!imgInfo) continue;
+        const posterBox = card.querySelector('.mfg-upcoming-poster-box');
+        if (!posterBox) continue;
+
+        const posterSrc = imgInfo.poster || imgInfo.header || imgInfo.tiny;
+        if (!posterSrc) continue;
+
+        let img = posterBox.querySelector('img.mfg-upcoming-poster-img');
+        if (!img) {
+          img = document.createElement('img');
+          img.className = 'mfg-upcoming-poster-img';
+          img.loading = 'lazy';
+          img.decoding = 'async';
+          img.alt = item.query;
+          img.src = posterSrc;
+          img.addEventListener('error', () => {
+            if (imgInfo.header && img.src !== imgInfo.header) {
+              img.src = imgInfo.header;
+            } else if (imgInfo.tiny && img.src !== imgInfo.tiny) {
+              img.src = imgInfo.tiny;
+            } else {
+              img.remove();
+            }
+          }, { once: true });
+          posterBox.prepend(img);
+        } else {
+          img.src = posterSrc;
+        }
+      }
+    }).catch(() => {});
 
     return true;
   }

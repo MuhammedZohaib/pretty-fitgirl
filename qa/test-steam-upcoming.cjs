@@ -56,8 +56,10 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
               const res = {};
               for (const title of msg.titles) {
                 res[title] = {
+                  source: 'steam',
                   appid: 12345,
                   name: title,
+                  poster: `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/12345/library_600x900.jpg`,
                   header: `https://cdn.cloudflare.steamstatic.com/steam/apps/12345/header.jpg`,
                   tiny: `https://cdn.cloudflare.steamstatic.com/steam/apps/12345/capsule_sm_120.jpg`
                 };
@@ -91,21 +93,28 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
     await page.addScriptTag({ content: js });
     await page.waitForTimeout(300);
 
-    // Verify Upcoming Repacks enhancement
-    const upcomingRows = await page.locator('.fgyt-row').count();
-    console.log(`Found ${upcomingRows} upcoming repack rows`);
-    assert(upcomingRows > 0, 'No upcoming repack rows were created');
+    // Verify Upcoming Repacks enhancement as Cards
+    const upcomingCards = await page.locator('.mfg-upcoming-card-item').count();
+    console.log(`Found ${upcomingCards} upcoming repack cards`);
+    assert(upcomingCards > 0, 'No upcoming repack cards were created');
 
-    const firstChip = page.locator('.fgyt-chip').first();
-    const firstHref = await firstChip.getAttribute('href');
-    console.log('Sample chip YouTube gameplay link:', firstHref);
-    assert(firstHref.includes('youtube.com/results?search_query='), 'Chip link is not a YouTube search');
+    const firstCard = page.locator('.mfg-upcoming-card-item').first();
+    const posterLink = firstCard.locator('.mfg-upcoming-poster-link');
+    const firstHref = await posterLink.getAttribute('href');
+    console.log('Sample card YouTube gameplay link:', firstHref);
+    assert(firstHref.includes('youtube.com/results?search_query='), 'Poster link is not a YouTube search');
     assert(firstHref.includes('&sp=CAMSAhAB'), 'YouTube search is not sorted by view count');
 
-    const firstImg = page.locator('.fgyt-chip img').first();
-    assert(await firstImg.count() > 0, 'Steam cover image was not injected in chip');
+    const firstImg = firstCard.locator('.mfg-upcoming-poster-img');
+    assert(await firstImg.count() > 0, 'Vertical poster image was not injected in card');
     const imgSrc = await firstImg.getAttribute('src');
-    assert(imgSrc.includes('steamstatic.com'), 'Chip image is not from Steam CDN');
+    assert(imgSrc.includes('library_600x900.jpg') || imgSrc.includes('steamstatic.com'), 'Card image is not a vertical poster');
+
+    const playBadge = firstCard.locator('.mfg-upcoming-play-badge');
+    assert(await playBadge.count() > 0, 'Play overlay badge is missing');
+
+    const actionBtn = firstCard.locator('.mfg-upcoming-action-btn');
+    assert(await actionBtn.count() > 0, 'Action gameplay button is missing');
 
     // Test cover fallback in repack cards
     const coversWithFallback = await page.locator('.mfg-cover img.mfg-steam-fallback').count();
@@ -115,14 +124,14 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
     await page.evaluate(() => window.changePreferences({ enabled: false }));
     await page.waitForTimeout(100);
 
-    const remainingRows = await page.locator('.fgyt-row').count();
-    assert.equal(remainingRows, 0, 'Upcoming repack rows remained after disabling extension');
+    const remainingCards = await page.locator('.mfg-upcoming-card-item').count();
+    assert.equal(remainingCards, 0, 'Upcoming repack cards remained after disabling extension');
     assert.equal(await page.locator('.mfg-cover').count(), 0, 'Cover frames remained after disabling extension');
 
     // Verify Re-enable
     await page.evaluate(() => window.changePreferences({ enabled: true }));
     await page.waitForTimeout(200);
-    assert(await page.locator('.fgyt-row').count() > 0, 'Upcoming repack rows did not restore when re-enabled');
+    assert(await page.locator('.mfg-upcoming-card-item').count() > 0, 'Upcoming repack cards did not restore when re-enabled');
 
     assert.deepEqual(errors, [], 'Page errors detected during test');
     console.log('PASS: Steam cover fallback and Upcoming Repacks fully validated!');

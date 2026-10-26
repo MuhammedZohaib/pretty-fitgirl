@@ -1383,26 +1383,33 @@ html.mfg-on #content #mfg-panel-sc video {
 .mfg-lightbox {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: 100000;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(12px);
+  box-sizing: border-box;
 }
 
 .mfg-lightbox.mfg-lightbox-open {
-  display: flex;
+  display: flex !important;
 }
 
 .mfg-lightbox-img {
   max-width: 90vw;
-  max-height: 85vh;
+  max-height: 82vh;
   border-radius: var(--geist-radius-md);
   border: 1px solid var(--geist-hairline-strong);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
   object-fit: contain;
+  animation: mfgLbIn 180ms ease-out;
+}
+
+@keyframes mfgLbIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .mfg-lightbox-close {
@@ -1420,11 +1427,44 @@ html.mfg-on #content #mfg-panel-sc video {
   color: #ffffff;
   font-size: 1.125rem;
   cursor: pointer;
-  transition: background var(--mfg-speed);
+  transition: all var(--mfg-speed);
 }
 
 .mfg-lightbox-close:hover {
   background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.mfg-lightbox-actions {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.75rem;
+}
+
+.mfg-lightbox-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.875rem;
+  border-radius: var(--geist-radius-pill);
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ededed !important;
+  font-family: var(--mfg-font);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: none !important;
+  backdrop-filter: blur(8px);
+  transition: all var(--mfg-speed);
+}
+
+.mfg-lightbox-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff !important;
 }
 
 /* Updates Community Card */

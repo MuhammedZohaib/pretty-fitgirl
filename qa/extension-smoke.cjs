@@ -52,6 +52,11 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
       contentType: 'application/json',
       body: JSON.stringify({ total: 1, items: [{ id: 1091500, name: 'Cyberpunk 2077', tiny_image: '' }] })
     }));
+    await context.route('https://catalog.gog.com/**', route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ products: [] })
+    }));
     await context.route('https://**youtube**/**', route => route.abort());
     await context.route('https://**imageban.ru/**', route => route.abort());
     const page = await context.newPage(); const errors = [];
