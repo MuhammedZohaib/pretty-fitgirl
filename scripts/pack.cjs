@@ -155,6 +155,7 @@ firefoxManifest.browser_specific_settings = {
     strict_min_version: '140.0',
     data_collection_permissions: { required: ['none'] },
   },
+  gecko_android: { strict_min_version: '142.0' },
 };
 const firefoxFiles = collectFiles(extDir).map((f) =>
   f.name === 'manifest.json' ? { name: f.name, content: Buffer.from(JSON.stringify(firefoxManifest, null, 2) + '\n') } : f

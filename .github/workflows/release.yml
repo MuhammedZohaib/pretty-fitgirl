@@ -2,8 +2,6 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -38,7 +36,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -47,21 +45,28 @@ jobs:
       - name: Run verification checks
         run: npm run check
 
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run release regression tests
+        run: npm test
+
       - name: Determine Version / Tag
         id: vars
+        env:
+          REQUESTED_TAG: ${{ inputs.tag_name }}
         run: |
-          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
-            TAG="${{ github.event.inputs.tag_name }}"
-          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            TAG="${GITHUB_REF#refs/tags/}"
-          else
-            VERSION=$(node -p "require('./pretty-fitgirl/manifest.json').version")
+          VERSION=$(node -p "require('./pretty-fitgirl/manifest.json').version")
+          TAG="${REQUESTED_TAG:-${GITHUB_REF#refs/tags/}}"
+          if [[ "${GITHUB_REF}" != refs/tags/* && -z "${REQUESTED_TAG}" ]]; then
             TAG="v${VERSION}"
           fi
-          VERSION="${TAG#v}"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building Pretty FitGirl for tag: $TAG (version: $VERSION)"
+          if [[ "$TAG" != "v${VERSION}" ]]; then
+            echo "Release tag must match manifest version v${VERSION}" >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Package extension
         run: |

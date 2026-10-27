@@ -313,7 +313,7 @@
     return card;
   }
 
-  // Replace the upcoming-repacks text list with a poster grid; artwork is filled in asynchronously (one batched lookup).
+  // Replace the upcoming list with a grid; only cards near the viewport request artwork.
   function upcoming(content, changes) {
     const article = findUpcomingArticle(content);
     if (!article) return false;
@@ -354,7 +354,6 @@
       const display = MFGRepack.gameName(span.textContent);
       return { span, display, query: MFGRepack.searchName(display) };
     });
-    const queries = [...new Set(items.map((i) => i.query).filter(Boolean))];
 
     const cards = [];
     for (const it of items) {
@@ -377,67 +376,20 @@
       }
     });
 
-    MFGRepack.resolveImages(queries).then((images) => {
-      if (!document.documentElement.classList.contains('mfg-on')) return;
-      for (const { item, card } of cards) {
-        const posterBox = card.querySelector('.mfg-upcoming-poster-box');
-        if (!posterBox) continue;
-
-        const imgInfo = images ? images[item.query] : null;
-        if (!imgInfo) {
-          MFGRepack.hideSpinner(posterBox);
-          continue;
-        }
-
-        const candidates = [
-          imgInfo.poster,
-          imgInfo.posterAlt,
-          imgInfo.gogPoster,
-          imgInfo.header,
-          imgInfo.headerAlt,
-          imgInfo.banner,
-          imgInfo.tiny
-        ].filter(Boolean);
-
-        if (!candidates.length) {
-          MFGRepack.hideSpinner(posterBox);
-          continue;
-        }
-
-        let img = posterBox.querySelector('img.mfg-upcoming-poster-img');
-        const onPosterLoad = () => {
-          MFGRepack.hideSpinner(posterBox);
-          MFGRepack.setSourceBadge(posterBox, imgInfo.source || 'steam');
-        };
-
-        if (!img) {
-          img = document.createElement('img');
-          img.className = 'mfg-upcoming-poster-img';
-          img.decoding = 'async';
-          img.alt = item.query;
-
-          let candidateIdx = 0;
-          const tryNext = () => {
-            if (candidateIdx < candidates.length) {
-              img.src = candidates[candidateIdx++];
-            } else {
-              img.remove();
-              MFGRepack.hideSpinner(posterBox);
-            }
-          };
-
-          img.addEventListener('load', onPosterLoad, { once: true });
-          img.addEventListener('error', tryNext);
-          tryNext();
-
-          posterBox.prepend(img);
-        } else {
-          img.src = candidates[0];
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        observer.unobserve(entry.target);
+        const record = cards.find(value => value.card === entry.target);
+        if (record) {
+          const box = record.card.querySelector('.mfg-upcoming-poster-box');
+          MFGRepack.loadSteamCover(box, record.item.query);
+          MFGRepack.attachSteamRating(box, record.item.query);
         }
       }
-    }).catch(() => {
-      cards.forEach(({ card }) => MFGRepack.hideSpinner(card.querySelector('.mfg-upcoming-poster-box')));
-    });
+    }, { rootMargin: '250px' });
+    for (const { card } of cards) observer.observe(card);
+    changes.push(() => observer.disconnect());
 
     return true;
   }

@@ -1,5 +1,5 @@
 /* Isolated developer rendering of captured original markup. Never executes third-party scripts. */
-const fs = require('node:fs');
+const fs = require('./fixture-fs.cjs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
@@ -20,14 +20,7 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
   assert.deepEqual(manifest.permissions, ['storage']);
   assert.deepEqual(manifest.content_scripts[0].matches, ['https://fitgirl-repacks.site/*']);
   for (const file of [...manifest.content_scripts[0].css, ...manifest.content_scripts[0].js, 'popup.html', 'popup.css', 'scripts/popup.js']) assert(fs.existsSync(path.join(extension, file)), file);
-  const installedChrome = process.platform === 'win32' && fs.existsSync('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe')
-    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-    : null;
-  const launchOptions = { headless: true };
-  if (!fs.existsSync(chromium.executablePath()) && installedChrome) {
-    launchOptions.executablePath = installedChrome;
-  }
-  const browser = await chromium.launch(launchOptions);
+  const browser = await chromium.launch(require('./browser-options.cjs'));
   try {
     for (const [name, pathname] of Object.entries(pages)) {
       const popular = ['popular', 'monthly', 'yearly'].includes(name);
@@ -52,6 +45,9 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
         if (request.url().includes('/themes/twentyfourteen/style.css')) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(path.join(__dirname, 'sources/theme.css'), 'utf8') });
         const cached = path.join(__dirname, 'sources/images', Buffer.from(request.url()).toString('base64url'));
         if (fs.existsSync(cached)) return route.fulfill({ contentType: 'image/jpeg', body: fs.readFileSync(cached) });
+        // Deterministic stand-in artwork keeps image-success and failure-isolation checks
+        // meaningful without a machine-local image cache or live CDN requests.
+        if (request.resourceType() === 'image') return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="360"><rect width="240" height="360" fill="#34473d"/><text x="120" y="180" text-anchor="middle" fill="white">Test artwork</text></svg>' });
         if (request.resourceType() === 'stylesheet') return route.fulfill({ contentType: 'text/css', body: '' });
         return route.abort();
       });

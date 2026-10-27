@@ -9,6 +9,7 @@
   ],
   "host_permissions": [
     "https://store.steampowered.com/*",
+    "https://api.steampowered.com/*",
     "https://catalog.gog.com/*"
   ],
   "background": {

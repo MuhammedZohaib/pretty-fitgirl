@@ -1,4 +1,4 @@
-/* Presentation from the current article only. No metadata requests or inferred sizes. */
+/* Article metadata is preserved; artwork and optional ratings use store lookups. */
 (() => {
   "use strict";
   // Maps lowercase labels found in the "Repack Size: ..." paragraph to [internal key, display label].
@@ -35,12 +35,12 @@
 
     const featureList = [...body.querySelectorAll("ul")].find(ul => /based on|lossless|installed/i.test(ul.textContent));
     if (featureList) {
-      const fText = featureList.textContent;
-      const diskMatch = fText.match(/(?:HDD space after installation|Disk space needed|HDD space)\s*:\s*([^.\n;]+)/i);
+      const fText = [...featureList.querySelectorAll("li")].map(li => li.textContent).join("\n");
+      const diskMatch = fText.match(/(?:HDD space after installation|Disk space needed|HDD space)\s*:\s*([^\n;]+)/i);
       if (diskMatch) result.values.disk = diskMatch[1].trim();
       const ramMatch = fText.match(/(?:At least\s*)?([0-9]+\s*GB)[^.\n;]*RAM/i);
       if (ramMatch) result.values.ram = ramMatch[1].trim();
-      const timeMatch = fText.match(/Installation takes[^:]*:\s*([^.\n;]+)/i);
+      const timeMatch = fText.match(/Installation takes[^:]*:\s*([^\n;]+)/i);
       if (timeMatch) result.values.installTime = timeMatch[1].trim().replace(/\s*\([^)]*\)/g, "");
     }
 
@@ -68,14 +68,16 @@
 
   // Decode the few HTML entities that appear in raw titles (textContent is not always pre-decoded).
   function decodeEntities(str) {
-    return (str || '')
-      .replace(/&#8211;/g, '–')
-      .replace(/&#8217;/g, '’')
-      .replace(/&#8220;/g, '“')
-      .replace(/&#8221;/g, '”')
+    if (!str) return '';
+    return str
+      .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
+      .replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)))
       .replace(/&amp;/g, '&')
       .replace(/&quot;/g, '"')
-      .replace(/&apos;/g, "'");
+      .replace(/&apos;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&nbsp;/g, ' ');
   }
 
   // Human-readable game name: decoded, whitespace-collapsed, arrow-free.
@@ -85,18 +87,44 @@
 
   // Reduce a repack title to a clean store-search query (drops version, build, DLC, bracket and "Delayed" noise).
   function searchName(name) {
+    if (!name) return '';
     let t = decodeEntities(name).replace(ARROW_RE, '').trim();
-    t = t.replace(/#\d+\s*(?:Updated)?/gi, ' ');
-    t = t.replace(/\[[^\]]*\]/g, ' '); // [HV], [Selective Download]
-    t = t.replace(/\([^)]*(?:denuvo|dlc|repack|crack|build|v\d)[^)]*\)/gi, ' ');
-    t = t.replace(/[–—-]\s*Delayed.*$/i, ' '); // "- Delayed, bad crack"
-    t = t.replace(/[–—-]\s*v\d.*$/i, ' '); // "- v1.5.0"
-    t = t.replace(/,\s*v\d.*$/i, ' '); // ", v1.5.0"
-    t = t.replace(/\s+v\d[\w.]*.*$/i, ' ');
-    t = t.replace(/\b(?:build|b)\s*\d+.*$/i, ' '); // "Build 12345"
-    t = t.replace(/\+\s*(?:all|\d+)?\s*dlcs?.*$/i, ' '); // "+ All DLCs"
-    t = t.replace(/\+\s*bonus.*$/i, ' '); // "+ Bonus OST"
+
+    // Strip leading franchise/language prefix in parens e.g. "(Chinese Paladin): "
+    t = t.replace(/^\([^)]+\):\s*/, '');
+
+    // Strip leading repack update indicators like "#1234 Updated" or "#1234"
+    // (Preserve "#BLUD" or "#DRIVE Rally" where "#" is immediately followed by a letter)
+    t = t.replace(/^#\d+\s*(?:Updated)?\s*[-–—:]*\s*/i, '');
+
+    // Strip brackets: [Selective Download], [HV], [Monkey Repack], etc.
+    t = t.replace(/\[[^\]]*\]/g, ' ');
+
+    // Strip emulator / recompilation / denuvo / fix tags in parentheses
+    t = t.replace(/\([^)]*(?:recompiled|recompilation|emu|yuzu|ryujinx|denuvo|crack|dlc|repack|release|campaign|update|hotfix|legacy|next-gen|windows|fix|bonus|ost|volume|vol\b|\bv\.?\d|\bbuild\b)[^)]*\)/gi, ' ');
+
+    // Cut off version/build/update/dlc delimiters
+    t = t.replace(/[\s,–—-]+(?:\b(?:v\.?|ver\.?|version)\s*\d|\bbuild\s*\d|\bpatch\s*\d|\bhotfix\s*\d|\bseason\s*\d|\bact\s+[ivx\d]+|\bupdate\s*\d|\b(?:early\s+access\s+)?v\d|\b(?:release|denuvoless)\b).*$/i, ' ');
+
+    // Cut off "+ <anything>" (e.g. "+ 103 DLCs", "+ Bonus Content", "+ All DLCs", "+ Update 2", "+ Windows 7 Fix")
+    t = t.replace(/\s*\+\s*.*$/, ' ');
+
+    // Strip trailing "Repack Updated", "Repack", etc.
+    t = t.replace(/\bRepack(?:\s+Updated)?\b.*$/i, ' ');
+
+    // Cut off common edition / bundle noise if at the end
+    t = t.replace(/[:–—-]\s*(?:Game\s*&\s*Soundtrack|Soundtrack\s*(?:Bundle|Edition)|Inflation\s*Edition|Supreme\s*Edition|Complete\s*Edition|Revolution\s*Remaster|All\s*Stars\s*Collection|Anniversary\s*(?:Edition|Update)|Digital\s*Deluxe\s*Edition|Super\s*Deluxe\s*Edition|Deluxe\s*Edition|Ultimate\s*Edition|Definitive\s*Edition|Collector(?:'s)?\s*Edition|Special\s*Edition|Enhanced\s*Edition|Remastered\s*Edition|Standard\s*Edition|Supporter\s*Edition|Game\s*of\s*the\s*Year\s*Edition|GOTY\s*Edition).*$/i, '');
+
+    // Strip trailing " & Soundtrack"
+    t = t.replace(/\s*&\s*Soundtrack.*$/i, '');
+
+    // Strip trademark / copyright symbols
     t = t.replace(/[™®©]/g, '');
+
+    // Strip trailing punctuation
+    t = t.replace(/[\s,:–—\/\-\+]+$/, '');
+    t = t.replace(/^[\s,:–—\/\-\+]+/, '');
+
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -134,28 +162,12 @@
 
   // Per-page memo of lookups: query -> Promise<artwork|null>. Avoids asking twice for one title.
   const gameCache = new Map();
-  // Queries waiting to be sent together. Cards are built in a tight loop, so
-  // coalescing them into ONE runtime message (one batched cache read in the
-  // background worker) is much faster than one message per card.
-  let batch = null;
-
-  /** Queue a query into the current batch and flush on the next ~16ms tick. */
+  // Resolve each title independently; one slow provider must not hold other cards.
   function queueQuery(query) {
-    if (!batch) {
-      batch = { queries: new Set(), waiters: [] };
-      const current = batch;
-      setTimeout(() => {
-        if (batch === current) batch = null;
-        resolveImages([...current.queries]).then((results) => {
-          for (const w of current.waiters) w.resolve(results ? results[w.query] || null : null);
-        });
-      }, 16);
-    }
-    batch.queries.add(query);
-    return new Promise((resolve) => batch.waiters.push({ query, resolve }));
+    return resolveImages([query]).then(results => results[query] || null);
   }
 
-  /** Resolve artwork for a single (already cleaned) game title; batched + memoised. */
+  /** Resolve artwork for a single (already cleaned) game title; independently resolved and memoised. */
   function resolveOneGame(query) {
     if (!query) return Promise.resolve(null);
     if (gameCache.has(query)) return gameCache.get(query);
@@ -235,6 +247,7 @@
       if (!steamImg) {
         steamImg = document.createElement("img");
         steamImg.className = "mfg-steam-fallback";
+        if (box.classList.contains("mfg-upcoming-poster-box")) steamImg.classList.add("mfg-upcoming-poster-img");
         steamImg.alt = query;
         steamImg.loading = "lazy";
         steamImg.decoding = "async";
@@ -265,12 +278,83 @@
     });
   }
 
+
+  // Create and attach a Steam rating badge to a cover box or card.
+  function attachSteamRating(box, title) {
+    if (!box || !title) return;
+    const query = searchName(title);
+    if (!query) return;
+
+    // Skip non-game posts: digests, announcements, donation posts
+    if (/^(?:updates digest|upcoming repacks|all my repacks|pop repacks|popular repacks|a call for donations|updates list)\b/i.test(query)) {
+      return;
+    }
+
+    resolveOneGame(query).then((game) => {
+      if (!game || !game.rating || !box.isConnected) return;
+      if (box.querySelector(".mfg-steam-rating")) return;
+
+      const rating = game.rating;
+      if (rating.percent === null && !rating.desc) return;
+
+      const badge = document.createElement("a");
+      const appid = game.appid;
+      badge.href = appid ? `https://store.steampowered.com/app/${appid}/` : '#';
+      badge.target = "_blank";
+      badge.rel = "noopener noreferrer";
+
+      let tier = "positive";
+      let icon = "👍";
+      if (typeof rating.percent === "number") {
+        if (rating.percent >= 70) {
+          tier = "positive";
+          icon = "👍";
+        } else if (rating.percent >= 40) {
+          tier = "mixed";
+          icon = "😐";
+        } else {
+          tier = "negative";
+          icon = "👎";
+        }
+      }
+
+      badge.className = `mfg-steam-rating mfg-rating-${tier}`;
+      const totalStr = typeof rating.total === 'number' && rating.total > 0 ? rating.total.toLocaleString() : '';
+      const percentStr = typeof rating.percent === 'number' ? `${rating.percent}%` : '';
+      badge.title = `${rating.desc}${percentStr ? `: ${percentStr}` : ''}${totalStr ? ` of ${totalStr} Steam reviews` : ''}`;
+      badge.setAttribute("aria-label", `Steam rating: ${percentStr} ${rating.desc}`);
+
+      badge.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+
+      const iconSpan = document.createElement("span");
+      iconSpan.className = "mfg-rating-icon";
+      iconSpan.textContent = icon;
+
+      const percentSpan = document.createElement("span");
+      percentSpan.className = "mfg-rating-percent";
+      percentSpan.textContent = percentStr;
+
+      const descSpan = document.createElement("span");
+      descSpan.className = "mfg-rating-desc";
+      descSpan.textContent = rating.desc || '';
+
+      badge.append(iconSpan);
+      if (percentStr) badge.append(percentSpan);
+      badge.append(descSpan);
+
+      box.append(badge);
+    }).catch(() => {});
+  }
+
   // Build a cover box: upgrade the original thumbnail to a Steam poster when possible, otherwise fall back to the original, then to a store lookup.
-  function cover(image, url, title, className = "mfg-cover", allowSteamFallback = true) {
+  function cover(image, url, title, className = "mfg-cover", allowSteamFallback = true, autoRating = true) {
     const box = document.createElement(url ? "a" : "div");
     box.className = className;
     if (url) { box.href = url; box.setAttribute("aria-label", title); }
     box.append(placeholder());
+    if (autoRating !== false) attachSteamRating(box, title);
 
     const originalSrc = image?.getAttribute("src");
     const hasOriginal = Boolean(originalSrc);
@@ -763,13 +847,16 @@
       setZoom(zoomLevel + step);
     }, { passive: false });
 
+    let previousFocus = null;
     let currentThumb = "";
     const openLb = (fullSrc, thumbSrc = "") => {
+      if (!lightbox.classList.contains("mfg-lightbox-open")) previousFocus = document.activeElement;
       currentThumb = thumbSrc;
       extLink.href = fullSrc;
       lbImg.src = fullSrc;
       resetZoom();
       lightbox.classList.add("mfg-lightbox-open");
+      closeBtn.focus();
     };
 
     lbImg.onerror = () => {
@@ -781,17 +868,24 @@
     };
 
     const closeLb = () => {
+      const wasOpen = lightbox.classList.contains("mfg-lightbox-open");
       lightbox.classList.remove("mfg-lightbox-open");
       lbImg.src = "";
       currentThumb = "";
       resetZoom();
+      if (wasOpen && previousFocus?.isConnected) previousFocus.focus();
     };
 
     closeBtn.addEventListener("click", closeLb);
     lightbox.addEventListener("click", e => { if (e.target === lightbox) closeLb(); });
     const onEsc = e => {
       if (!lightbox.classList.contains("mfg-lightbox-open")) return;
-      if (e.key === "Escape") {
+      if (e.key === "Tab") {
+        const controls = [...lightbox.querySelectorAll('button:not(:disabled), a[href]')];
+        const index = controls.indexOf(document.activeElement);
+        e.preventDefault();
+        controls[(index + (e.shiftKey ? -1 : 1) + controls.length) % controls.length].focus();
+      } else if (e.key === "Escape") {
         closeLb();
       } else if (e.key === "+" || e.key === "=") {
         setZoom(zoomLevel + ZOOM_STEP);
@@ -805,10 +899,20 @@
     changes.push(() => document.removeEventListener("keydown", onEsc));
 
     // Listen for image popup requests from comments iframe
+    const safeImage = value => {
+      if (typeof value !== 'string') return '';
+      try { const url = new URL(value); return url.protocol === 'https:' ? url.href : ''; }
+      catch { return ''; }
+    };
     const onCommentsImage = e => {
-      if (e.data?.type === "mfg-open-lightbox" && typeof e.data.src === "string") {
-        openLb(e.data.src, e.data.thumb || "");
-      }
+      if (e.origin !== 'https://web.tolstoycomments.com' ||
+          ![...document.querySelectorAll('.mfg-comments iframe')].some(frame => frame.contentWindow === e.source)) return;
+      if (e.data?.type !== 'mfg-open-lightbox') return;
+      const src = safeImage(e.data.src);
+      const thumb = e.data.thumb ? safeImage(e.data.thumb) : '';
+      if (!src || (e.data.thumb && !thumb)) return;
+      openLb(src, thumb);
+      e.source.postMessage({ type: 'mfg-lightbox-opened', id: e.data.id }, e.origin);
     };
     window.addEventListener("message", onCommentsImage);
     changes.push(() => window.removeEventListener("message", onCommentsImage));
@@ -1042,13 +1146,24 @@
         btn.setAttribute("aria-controls", p.panel.id);
         btn.setAttribute("aria-selected", String(idx === 0));
         btn.textContent = p.label;
+        btn.tabIndex = idx === 0 ? 0 : -1;
         p.panel.hidden = idx !== 0;
 
         btn.addEventListener("click", () => {
-          tabButtons.forEach(b => b.setAttribute("aria-selected", "false"));
+          tabButtons.forEach(b => { b.setAttribute("aria-selected", "false"); b.tabIndex = -1; });
           tabPanels.forEach(pan => pan.panel.hidden = true);
           btn.setAttribute("aria-selected", "true");
+          btn.tabIndex = 0;
           p.panel.hidden = false;
+        });
+        btn.addEventListener('keydown', event => {
+          let next;
+          if (event.key === 'ArrowRight') next = (idx + 1) % tabPanels.length;
+          if (event.key === 'ArrowLeft') next = (idx - 1 + tabPanels.length) % tabPanels.length;
+          if (event.key === 'Home') next = 0;
+          if (event.key === 'End') next = tabPanels.length - 1;
+          if (next === undefined) return;
+          event.preventDefault(); tabButtons[next].click(); tabButtons[next].focus();
         });
         tabButtons.push(btn);
         tabsNav.append(btn);
@@ -1059,6 +1174,25 @@
       } else {
         body.prepend(tabsNav, ...tabPanels.map(p => p.panel));
       }
+
+      const revealTabHash = () => {
+        let target;
+        try { target = document.getElementById(decodeURIComponent(location.hash.slice(1))); }
+        catch { return; }
+        if (!target) return;
+        const index = tabPanels.findIndex(({ panel }) => panel === target || panel.contains(target));
+        if (index < 0) return;
+        tabButtons[index].click();
+        const sources = target.closest('.mfg-direct-sources, .mfg-torrent-sources');
+        if (sources?.hidden) tabPanels[index].panel.querySelector('[data-src="all"]')?.click();
+        for (let node = target; node && node !== body; node = node.parentElement) {
+          if (node.matches('details')) node.open = true;
+        }
+        target.scrollIntoView({ block: 'start' });
+      };
+      window.addEventListener('hashchange', revealTabHash);
+      revealTabHash();
+      changes.push(() => window.removeEventListener('hashchange', revealTabHash));
 
       changes.push(() => {
         for (let i = moved.length - 1; i >= 0; i--) {
@@ -1076,5 +1210,5 @@
   }
 
   // Public API consumed by the other content scripts (they share one isolated world).
-  globalThis.MFGRepack = { metadata, placeholder, cover, summary, enhanceDetail, searchName, gameName, resolveImages, showSpinner, hideSpinner, setSourceBadge, headerToPoster, loadSteamCover };
+  globalThis.MFGRepack = { metadata, placeholder, cover, summary, enhanceDetail, searchName, gameName, resolveImages, showSpinner, hideSpinner, setSourceBadge, headerToPoster, loadSteamCover, attachSteamRating };
 })();

@@ -307,3 +307,92 @@ html.mfg-on[data-mfg-view="list"] #content .mfg-cover .mfg-cover-badge {
   font-size: 0.5rem !important;
   padding: 0.125rem 0.375rem !important;
 }
+
+/* Steam Rating Badges */
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-popular-art, .mfg-upcoming-poster-box) .mfg-steam-rating {
+  position: absolute !important;
+  top: 0.5rem !important;
+  right: 0.5rem !important;
+  z-index: 4 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  padding: 0.2rem 0.45rem !important;
+  border-radius: var(--geist-radius-pill) !important;
+  font-family: var(--mfg-font) !important;
+  font-size: 0.625rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  animation: mfgBadgeIn 0.2s ease-out !important;
+  transition: transform var(--mfg-speed), opacity var(--mfg-speed) !important;
+}
+
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-popular-art, .mfg-upcoming-poster-box) .mfg-steam-rating:hover {
+  transform: scale(1.06) !important;
+}
+
+/* Positive: 70% - 100% */
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-popular-art, .mfg-upcoming-poster-box) .mfg-steam-rating.mfg-rating-positive {
+  background: rgba(16, 32, 24, 0.88) !important;
+  color: #66c0f4 !important;
+  border: 1px solid rgba(102, 192, 244, 0.45) !important;
+}
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-popular-art, .mfg-upcoming-poster-box) .mfg-steam-rating.mfg-rating-positive .mfg-rating-percent {
+  color: #a4d007 !important;
+}
+
+/* Mixed: 40% - 69% */
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-popular-art, .mfg-upcoming-poster-box) .mfg-steam-rating.mfg-rating-mixed {
+  background: rgba(36, 32, 16, 0.88) !important;
+  color: #e5c158 !important;
+  border: 1px solid rgba(229, 193, 88, 0.45) !important;
+}
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-popular-art, .mfg-upcoming-poster-box) .mfg-steam-rating.mfg-rating-mixed .mfg-rating-percent {
+  color: #e5c158 !important;
+}
+
+/* Negative: < 40% */
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-popular-art, .mfg-upcoming-poster-box) .mfg-steam-rating.mfg-rating-negative {
+  background: rgba(36, 16, 16, 0.88) !important;
+  color: #e06c75 !important;
+  border: 1px solid rgba(224, 108, 117, 0.45) !important;
+}
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-popular-art, .mfg-upcoming-poster-box) .mfg-steam-rating.mfg-rating-negative .mfg-rating-percent {
+  color: #e06c75 !important;
+}
+
+html.mfg-on .mfg-steam-rating .mfg-rating-icon {
+  font-size: 0.625rem !important;
+  line-height: 1 !important;
+}
+
+html.mfg-on .mfg-steam-rating .mfg-rating-desc {
+  font-weight: 500 !important;
+  opacity: 0.85 !important;
+}
+
+/* Compact on smaller screens or list view */
+@media (max-width: 60em) {
+  html.mfg-on .mfg-steam-rating .mfg-rating-desc {
+    display: none !important;
+  }
+}
+
+html.mfg-on[data-mfg-view="list"] #content .mfg-cover .mfg-steam-rating {
+  top: 0.25rem !important;
+  right: 0.25rem !important;
+  font-size: 0.5rem !important;
+  padding: 0.125rem 0.35rem !important;
+}
+html.mfg-on[data-mfg-view="list"] #content .mfg-cover .mfg-steam-rating .mfg-rating-desc {
+  display: none !important;
+}
+
+/* Instant hide when preference is off */
+html.mfg-on[data-mfg-steam-ratings="off"] .mfg-steam-rating {
+  display: none !important;
+}

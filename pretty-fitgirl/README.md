@@ -22,7 +22,7 @@ The theme toggle immediately switches between Pretty FitGirl and the original we
 - **Clean pagination**: Preserves native feed and A–Z pagination targets with enlarged, touch-friendly clickable buttons.
 - **Announcement folding**: Update digests and site announcements fold neatly above the card grid.
 - **Game detail view**: Retains structured game info, system requirements, author warnings, download mirrors, spoilers, galleries, and comments.
-- **Zero bloat**: No background workers, no analytics, no external scripts.
+- **Zero bloat**: A small background worker coordinates artwork requests and adult-filter refreshes. No analytics or remotely executed scripts.
 
 ## A–Z covers
 
@@ -35,13 +35,13 @@ The original A–Z index contains 50 text links per page without artwork. Pretty
 ## Fonts and logo
 
 - **Inter** and **Manrope** Latin variable WOFF2 fonts are bundled locally in `assets/fonts/` under the SIL Open Font License.
-- No Google Fonts or third-party CDNs are contacted at runtime.
+- Fonts are served from the extension; no Google Fonts or external font CDN is contacted. Artwork can load from external image hosts.
 - High-resolution SVG/PNG icons bundled in `assets/`.
 
 ## Privacy and permissions
 
-- **Single permission**: `storage` (`chrome.storage.local` used solely for theme preferences and cover cache).
-- **Zero tracking**: No telemetry, analytics, remote scripts, cookies, or cloud services.
+- **Permissions**: `storage` for preferences, artwork, and adult-filter cache; host access to Steam store/API and GOG for artwork and review summaries.
+- **Zero tracking**: No telemetry, analytics, or remotely executed scripts. Steam/GOG receive artwork queries and app IDs plus normal connection metadata; artwork hosts receive image requests. Store requests omit credentials. The optional adult filter requests the site’s own archive.
 - **Reversible**: Scoped to `html.mfg-on`. Turning off the extension immediately restores the original page styles and DOM.
 - **Target**: Desktop Chromium browsers (Chrome, Edge, Brave, Opera, Vivaldi) version 105+.
 

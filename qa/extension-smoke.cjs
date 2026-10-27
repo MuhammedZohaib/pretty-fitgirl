@@ -1,5 +1,5 @@
 /* Actual extension integration, using only a fresh isolated browser profile. */
-const fs = require('node:fs');
+const fs = require('./fixture-fs.cjs');
 const os = require('node:os');
 const path = require('node:path');
 const assert = require('node:assert/strict');
@@ -47,6 +47,22 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
       return route.abort();
     });
     await context.route('https://**steamstatic.com/**', route => route.abort());
+        await context.route('https://api.steampowered.com/**', route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        response: {
+          query_summary: {
+            num_reviews: 20,
+            review_score: 8,
+            review_score_desc: 'Very Positive',
+            total_positive: 350000,
+            total_negative: 40000,
+            total_reviews: 390000
+          }
+        }
+      })
+    }));
     await context.route('https://store.steampowered.com/**', route => route.fulfill({
       status: 200,
       contentType: 'application/json',

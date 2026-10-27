@@ -34,9 +34,19 @@
       if (!active) return "";
       const target = new URL(url);
       if (target.origin !== location.origin) return "";
-      const response = await fetch(target.href, { signal: controller.signal, credentials: "same-origin", cache: "force-cache" });
-      if (!response.ok || !response.url.startsWith(location.origin + "/")) return "";
-      const html = await response.text();
+      const request = new AbortController();
+      const cancel = () => request.abort();
+      controller.signal.addEventListener('abort', cancel, { once: true });
+      const timeout = setTimeout(cancel, 8000);
+      let html;
+      try {
+        const response = await fetch(target.href, { signal: request.signal, credentials: "same-origin", cache: "force-cache" });
+        if (!response.ok || !response.url.startsWith(location.origin + "/")) return "";
+        html = await response.text();
+      } finally {
+        clearTimeout(timeout);
+        controller.signal.removeEventListener('abort', cancel);
+      }
       const tag = (html.match(/<img\b[^>]*>/gi) || []).find(value => /\bclass\s*=\s*["'][^"']*\balignleft\b/i.test(value));
       if (!tag) return "";
       // Parse only the image tag, without importing scripts or the fetched document.
@@ -55,6 +65,7 @@
         (async () => {
           try {
             MFGRepack.showSpinner(frame);
+            MFGRepack.attachSteamRating(frame, title);
             let src = "";
             try { src = await imageFor(url); } catch { src = ""; }
             if (!active) return;
@@ -87,7 +98,7 @@
       const link = item.querySelector(":scope > a[href]"); if (!link) continue;
       const originalClass = item.getAttribute("class");
       item.classList.add("mfg-directory-card");
-      const frame = MFGRepack.cover(null, link.href, link.textContent.trim(), "mfg-cover", false);
+      const frame = MFGRepack.cover(null, link.href, link.textContent.trim(), "mfg-cover", false, false);
       const heading = document.createElement("h2"); heading.className = "mfg-directory-title";
       link.before(heading); heading.append(link); item.prepend(frame);
       const originalTitle = link.getAttribute("title"); link.title = link.textContent.trim();

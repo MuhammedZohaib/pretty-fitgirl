@@ -1,7 +1,7 @@
 /**
  * Playwright test: screenshot lightbox (zoom/pan/close) and the collapsible comments area. Not shipped.
  */
-const fs = require('node:fs');
+const fs = require('./fixture-fs.cjs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
@@ -13,11 +13,8 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
 (async () => {
   console.log('Testing unified lightbox for screenshots and Tolstoy comments...');
 
-  const installedChrome = process.platform === 'win32' && fs.existsSync('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe')
-    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-    : 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+  const browser = await chromium.launch(require('./browser-options.cjs'));
 
-  const browser = await chromium.launch({ executablePath: installedChrome, headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
     const errors = [];
@@ -114,12 +111,21 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
     // 3. Test Tolstoy comments iframe message -> open lightbox
     console.log('Testing Tolstoy comments postMessage integration...');
     await page.evaluate(() => {
-      window.postMessage({
-        type: 'mfg-open-lightbox',
-        src: 'https://example.com/comment-full.jpg',
-        thumb: 'https://example.com/comment-thumb.jpg'
-      }, '*');
+      window.postMessage({ type: 'mfg-open-lightbox', src: 'https://example.com/forged.jpg' }, '*');
     });
+    await page.waitForTimeout(50);
+    assert.equal(await page.locator('.mfg-lightbox-open').count(), 0, 'Untrusted sender opened lightbox');
+    await page.evaluate(() => {
+      const frame = document.createElement('iframe'); frame.id = 'trusted-comments';
+      frame.src = 'https://web.tolstoycomments.com/widget/index.html';
+      document.querySelector('.mfg-comments-body').append(frame);
+    });
+    const frame = await (await page.locator('#trusted-comments').elementHandle()).contentFrame();
+    await frame.waitForLoadState();
+    await frame.evaluate(() => parent.postMessage({ type: 'mfg-open-lightbox', src: 'javascript:alert(1)' }, 'https://fitgirl-repacks.site'));
+    await page.waitForTimeout(50);
+    assert.equal(await page.locator('.mfg-lightbox-open').count(), 0, 'Unsafe URL opened lightbox');
+    await frame.evaluate(() => parent.postMessage({ type: 'mfg-open-lightbox', src: 'https://example.com/comment-full.jpg', thumb: 'https://example.com/comment-thumb.jpg' }, 'https://fitgirl-repacks.site'));
 
     await page.waitForFunction(() => document.querySelector('.mfg-lightbox')?.classList.contains('mfg-lightbox-open'));
     const commentLbImgSrc = await lightbox.locator('.mfg-lightbox-img').getAttribute('src');

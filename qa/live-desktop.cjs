@@ -58,5 +58,6 @@ fs.mkdirSync(output, { recursive: true });
       } catch (error) { report.pages.push({ name, url, error: error.message }); console.log(`${name}: ${error.message.split('\n')[0]}`); }
     }
     fs.writeFileSync(path.join(output, 'live-report.json'), JSON.stringify(report, null, 2));
+    if (report.errors.length || report.pages.some(page => page.error || page.sidebars !== 2 || (page.name === 'detail' && !page.detailHero))) process.exitCode = 1;
   } finally { await context.close(); }
 })().catch(error => { console.error(error.message); process.exitCode = 1; });

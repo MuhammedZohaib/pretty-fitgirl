@@ -1,10 +1,10 @@
-/* No requests, navigation interception, or site-script replacement. */
+/* Reversible presentation and preferences, with an optional same-origin adult archive filter. */
 (() => {
   "use strict";
   if (location.hostname !== "fitgirl-repacks.site" || window.top !== window) return;
   const root = document.documentElement;
   // User preference defaults; the popup writes the same shape to chrome.storage.local under "modernFitGirl".
-  const defaults = { enabled: true, density: "comfortable", view: "grid", hideAdult: false };
+  const defaults = { enabled: true, density: "comfortable", view: "grid", hideAdult: false, steamRatings: true };
   let preferences = { ...defaults };
   // `ready` = DOM parsed; `enhanced` = DOM rewrite applied; `changes` = undo stack used to restore the original page when disabled.
   let ready = false;
@@ -73,6 +73,8 @@
           const artwork = document.createElement("span"); artwork.className = "mfg-popular-art"; artwork.append(MFGRepack.placeholder()); link.prepend(artwork);
           changes.push(() => artwork.remove());
         }
+        const currentArt = card.querySelector(".mfg-popular-art");
+        if (currentArt) MFGRepack.attachSteamRating(currentArt, title);
         const caption = document.createElement("span");
         caption.className = "mfg-popular-caption";
         const rank = document.createElement("span");
@@ -322,41 +324,81 @@
   const adultKey = "mfg.adult.v1";
   const adultUrls = new Set();
   let adultLoading = false;
+  let adultController = null;
+  let adultRetry = null;
   const pathOf = href => { try { return new URL(href, location.href).pathname.replace(/\/+$/, ""); } catch { return ""; } };
   function isAdult(article) {
     if (article.classList.contains("tag-adult")) return true;
     return [...article.querySelectorAll(".tag-links a, a[rel~=tag]")].some(link => /^\s*adult\s*$/i.test(link.textContent));
   }
-  // Load (or refresh, once a day) the adult URL set, then re-run the filter.
+  const adultEnabled = () => preferences.enabled && preferences.hideAdult;
+  const adultMessage = message => new Promise(resolve => {
+    try { chrome.runtime.sendMessage(message, value => { resolve(chrome.runtime.lastError ? {} : value || {}); }); }
+    catch { resolve({}); }
+  });
+  function retryAdult(delay) {
+    clearTimeout(adultRetry);
+    if (adultEnabled()) adultRetry = setTimeout(loadAdultUrls, delay);
+  }
+  // One tab owns the crawl. Interrupted scans retain a cursor, never a fresh timestamp.
   async function loadAdultUrls() {
-    if (adultLoading) return;
+    if (adultLoading || !adultEnabled()) return;
     adultLoading = true;
+    let token;
+    let scan;
+    let found;
+    let nextPage = 1;
     try {
       const stored = (await chrome.storage.local.get(adultKey))[adultKey];
       if (stored && Array.isArray(stored.paths)) for (const path of stored.paths) adultUrls.add(path);
       filterAdult();
-      if (stored && Date.now() - stored.time < 86400000) return;
-      const found = new Set();
-      for (let page = 1; page <= 80; page += 3) {
-        const batch = await Promise.all([page, page + 1, page + 2].map(async number => {
-          try {
-            const response = await fetch(`/tag/adult/${number === 1 ? "" : `page/${number}/`}`, { credentials: "same-origin" });
-            if (!response.ok) return null;
-            const doc = new DOMParser().parseFromString(await response.text(), "text/html");
-            return [...doc.querySelectorAll("article.hentry .entry-title a")].map(link => pathOf(link.href));
-          } catch { return null; }
-        }));
-        for (const paths of batch) for (const path of paths || []) found.add(path);
-        if (batch.some(paths => !paths || !paths.length)) break;
+      if (stored?.complete && Date.now() - stored.time < 86400000) return;
+      if (stored?.retryAfter > Date.now()) { retryAdult(stored.retryAfter - Date.now()); return; }
+      if (!adultEnabled()) return;
+      ({ token } = await adultMessage({ type: 'adultClaim' }));
+      if (!token) { retryAdult(30000); return; }
+      // Recheck after acquiring the lease; a different tab may just have finished.
+      scan = (await chrome.storage.local.get(adultKey))[adultKey];
+      if (scan?.complete && Date.now() - scan.time < 86400000) return;
+      found = new Set(scan?.complete ? [] : scan?.paths || []);
+      nextPage = scan?.complete ? 1 : scan?.nextPage || 1;
+      adultController = new AbortController();
+      let complete = false;
+      // Small resumable batches bound work per refresh rather than crawling 81 pages at once.
+      for (let count = 0; count < 6 && adultEnabled(); count++, nextPage++) {
+        const renewed = await adultMessage({ type: 'adultRenew', token });
+        if (!renewed.ok) throw new Error('refresh lease expired');
+        const timeout = setTimeout(() => adultController?.abort(), 8000);
+        try {
+          const response = await fetch(`/tag/adult/${nextPage === 1 ? "" : `page/${nextPage}/`}`, { credentials: 'same-origin', signal: adultController.signal });
+          if (!response.ok) throw new Error('archive unavailable');
+          const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+          const articles = [...doc.querySelectorAll('article.hentry')];
+          const links = articles.map(article => article.querySelector('.entry-title a')).filter(Boolean);
+          if (!links.length) throw new Error('unexpected archive markup');
+          for (const link of links) found.add(pathOf(link.getAttribute('href')));
+          // Follow the archive's own pagination rather than guessing its final page.
+          complete = !doc.querySelector('.paging-navigation a.next, .pagination a.next');
+        } finally { clearTimeout(timeout); }
+        if (complete) break;
       }
-      if (found.size) {
-        for (const path of found) adultUrls.add(path);
-        await chrome.storage.local.set({ [adultKey]: { time: Date.now(), paths: [...adultUrls] } });
-        filterAdult();
+      if (!adultEnabled()) throw new Error('refresh cancelled');
+      const record = { paths: [...found], complete, nextPage, time: complete ? Date.now() : 0, retryAfter: complete ? 0 : Date.now() + 30000 };
+      await chrome.storage.local.set({ [adultKey]: record });
+      if (complete) adultUrls.clear();
+      for (const path of found) adultUrls.add(path);
+      filterAdult();
+      if (!complete) retryAdult(30000);
+    } catch {
+      if (token && found) {
+        try { await chrome.storage.local.set({ [adultKey]: { paths: [...new Set([...adultUrls, ...found])], nextPage, complete: false, time: 0, retryAfter: Date.now() + 60000 } }); } catch {}
       }
-    } catch { /* Tag-based hiding still works without the archive. */ }
-    // adultLoading stays true: the set loads once per page and later toggles are instant.
-    finally { /* no-op */ }
+      retryAdult(60000);
+    } finally {
+      adultController = null;
+      if (token) await adultMessage({ type: 'adultRelease', token });
+      adultLoading = false;
+    }
   }
   function filterAdult() {
     const hide = preferences.enabled && preferences.hideAdult;
@@ -371,6 +413,7 @@
       mark(card, Boolean(link) && adultUrls.has(pathOf(link.href)));
     }
     if (hide) loadAdultUrls();
+    else { adultController?.abort(); clearTimeout(adultRetry); }
   }
 
   // Apply preferences: root classes first (pure CSS, instant), DOM enhancement only once the DOM is ready.
@@ -380,12 +423,14 @@
     if (preferences.enabled) {
       root.dataset.mfgDensity = preferences.density;
       root.dataset.mfgView = preferences.view;
+      root.dataset.mfgSteamRatings = preferences.steamRatings !== false ? "on" : "off";
       if (ready) enhance();
       if (ready) filterAdult();
       syncControls();
     } else {
       delete root.dataset.mfgDensity;
       delete root.dataset.mfgView;
+      delete root.dataset.mfgSteamRatings;
       restore();
       filterAdult();
     }
@@ -397,7 +442,8 @@
       enabled: typeof value?.enabled === "boolean" ? value.enabled : defaults.enabled,
       density: value?.density === "compact" ? "compact" : defaults.density,
       view: value?.view === "list" ? "list" : defaults.view,
-      hideAdult: value?.hideAdult === true
+      hideAdult: value?.hideAdult === true,
+      steamRatings: value?.steamRatings !== false
     };
   }
 
@@ -409,7 +455,14 @@
       apply();
     });
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== "local" || !changes.modernFitGirl) return;
+      if (area !== "local") return;
+      if (changes[adultKey]?.newValue) {
+        const record = changes[adultKey].newValue;
+        if (record.complete) adultUrls.clear();
+        for (const path of record.paths || []) adultUrls.add(path);
+        filterAdult();
+      }
+      if (!changes.modernFitGirl) return;
       preferences = normalize(changes.modernFitGirl.newValue);
       apply();
     });

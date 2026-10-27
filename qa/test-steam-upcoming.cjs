@@ -1,7 +1,7 @@
 /**
  * Playwright test: the upcoming-repacks poster grid and its Steam/GOG artwork resolution. Not shipped.
  */
-const fs = require('node:fs');
+const fs = require('./fixture-fs.cjs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
@@ -13,11 +13,8 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
 (async () => {
   console.log('Testing Steam cover fallback and Upcoming Repacks enhancement...');
 
-  const installedChrome = process.platform === 'win32' && fs.existsSync('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe')
-    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-    : 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+  const browser = await chromium.launch(require('./browser-options.cjs'));
 
-  const browser = await chromium.launch({ executablePath: installedChrome, headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1600, height: 1100 } });
     const errors = [];
@@ -111,7 +108,13 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
     assert(firstHref.includes('youtube.com/results?search_query='), 'Poster link is not a YouTube search');
     assert(firstHref.includes('&sp=CAMSAhAB'), 'YouTube search is not sorted by view count');
 
+    assert.equal(await firstCard.locator('img').count(), 0, 'Collapsed announcements should not fetch posters');
+    await firstCard.evaluate(card => { for (let node = card.parentElement; node; node = node.parentElement) if (node.matches('details')) node.open = true; });
+    await firstCard.scrollIntoViewIfNeeded();
     const firstImg = firstCard.locator('.mfg-upcoming-poster-img');
+    await firstImg.waitFor();
+    assert(await page.locator('.mfg-upcoming-poster-img').count() < upcomingCards, 'Offscreen posters loaded eagerly');
+    assert.equal(await firstImg.getAttribute('loading'), 'lazy');
     assert(await firstImg.count() > 0, 'Vertical poster image was not injected in card');
     const imgSrc = await firstImg.getAttribute('src');
     assert(imgSrc.includes('library_600x900.jpg') || imgSrc.includes('steamstatic.com'), 'Card image is not a vertical poster');

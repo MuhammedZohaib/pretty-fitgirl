@@ -27,6 +27,9 @@ assert(fs.existsSync(manifestPath), 'manifest.json exists');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 assert(manifest.manifest_version === 3, 'Manifest version is 3');
 assert(manifest.name === 'Pretty FitGirl', `Extension name is "Pretty FitGirl" (found: "${manifest.name}")`);
+const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
+assert(manifest.version === pkg.version && pkg.version === lock.version && lock.packages[''].version === pkg.version, 'Manifest, package and lockfile versions agree');
 assert(typeof manifest.version === 'string' && /^\d+\.\d+\.\d+$/.test(manifest.version), `Semantic version (found: ${manifest.version})`);
 assert(manifest.description && manifest.description.length > 10, 'Manifest description is present');
 assert(Array.isArray(manifest.permissions) && manifest.permissions.includes('storage'), 'Manifest includes storage permission');
@@ -73,6 +76,12 @@ for (const cs of manifest.content_scripts || []) {
     }
   }
 }
+
+// Popup scripts execute outside the content-script list and need their own check.
+try {
+  new vm.Script(fs.readFileSync(path.join(extDir, 'scripts/popup.js'), 'utf8'), { filename: 'scripts/popup.js' });
+  assert(true, 'Popup script syntax is valid');
+} catch (error) { assert(false, `Popup syntax error: ${error.message}`); }
 
 // 5. Web accessible resources
 for (const entry of manifest.web_accessible_resources || []) {

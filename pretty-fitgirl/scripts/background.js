@@ -8,12 +8,48 @@
  */
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const CACHE_PREFIX = 'steam:';
+const CACHE_PREFIX = 'artwork.v2:';
 const STEAM_SEARCH =
   'https://store.steampowered.com/api/storesearch/?cc=US&l=english&term=';
 const GOG_SEARCH =
   'https://catalog.gog.com/v1/catalog?limit=10&locale=en-US&query=';
 const CONCURRENCY = 6;
+
+// Bound both connection and response-body reads; never pin a worker slot indefinitely.
+async function fetchJson(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+  try {
+    const response = await fetch(url, { credentials: 'omit', signal: controller.signal });
+    if (!response.ok) throw new Error('provider ' + response.status);
+    return await response.json();
+  } finally { clearTimeout(timer); }
+}
+
+/** Fetch Steam user reviews summary from the official Web API. */
+async function fetchSteamRating(appid) {
+  try {
+    const data = await fetchJson(
+      'https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1/?appid=' + appid + '&json=1'
+    );
+    const qs = data?.response?.query_summary;
+    if (!qs || !qs.review_score_desc) return null;
+    const total = (qs.total_positive || 0) + (qs.total_negative || 0);
+    if (total === 0) return null;
+    const percent = Math.round(((qs.total_positive || 0) / total) * 100);
+    return {
+      desc: qs.review_score_desc,
+      percent,
+      positive: qs.total_positive || 0,
+      negative: qs.total_negative || 0,
+      total: qs.total_reviews || total,
+      score: qs.review_score || 0
+    };
+  } catch {
+    return null;
+  }
+}
+
 
 /** Normalised storage key: case/whitespace-insensitive so "Foo  Bar" and "foo bar" share one entry. */
 function cacheKey(title) {
@@ -106,7 +142,7 @@ async function pruneExpired() {
   try {
     const all = await chrome.storage.local.get(null);
     const stale = Object.keys(all).filter(
-      (k) => k.startsWith(CACHE_PREFIX) && !fresh(all[k])
+      (k) => (k.startsWith(CACHE_PREFIX) && !fresh(all[k])) || k.startsWith('steam:')
     );
     if (stale.length) await chrome.storage.local.remove(stale);
   } catch {
@@ -117,23 +153,87 @@ async function pruneExpired() {
 chrome.runtime.onStartup.addListener(pruneExpired);
 chrome.runtime.onInstalled.addListener(pruneExpired);
 
-/** Lowercase and strip punctuation so titles compare loosely. */
+/** Lowercase, normalize ampersands, and strip punctuation so titles compare loosely. */
 function norm(s) {
-  return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return (s || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
-/** Choose the best store-search item for a title on Steam. */
-function pickBestSteam(items, title) {
-  const want = norm(title);
-  let startsMatch = null;
+function editionBase(title) {
+  return title.replace(/ (?:ultimate|deluxe|definitive|collector s|special|enhanced|remastered|digital|standard|reloaded) edition$/, '').trim();
+}
+
+/** Choose the best store-search item for a title on Steam with strict accuracy. */
+function pickBestSteam(items, query) {
+  if (!items || !items.length) return null;
+  const want = norm(query);
+  if (!want) return null;
+
+  // 1. Exact match (case/punctuation-insensitive)
   for (const it of items) {
     if (!it || !it.id) continue;
-    const n = norm(it.name);
-    if (n === want) return it; // exact name match wins
-    if (!startsMatch && (n.startsWith(want) || want.startsWith(n))) startsMatch = it;
+    if (norm(it.name) === want) return it;
   }
-  if (startsMatch) return startsMatch;
-  return items.find((it) => it && it.id) || null; // else Steam's top relevance hit
+
+  // Detect unwanted soundtrack / DLC / expansion / demo / dedicated server when query didn't ask for it
+  const isJunk = (name) => {
+    const n = norm(name);
+    const junkWords = ['soundtrack', 'ost', 'dlc', 'expansion pack', 'demo', 'dedicated server', 'artbook', 'vr mode'];
+    for (const j of junkWords) {
+      if ((' ' + n + ' ').includes(' ' + j + ' ') && !(' ' + want + ' ').includes(' ' + j + ' ')) return true;
+    }
+    return false;
+  };
+
+  const nonJunk = items.filter((it) => it && it.id && !isJunk(it.name));
+  const pool = nonJunk;
+
+  // 2. Exact match on pool
+  for (const it of pool) {
+    if (norm(it.name) === want) return it;
+  }
+
+  // Numbers in the query must match numbers in the candidate
+  const extractNumbers = (s) => (s.match(/\b\d+\b/g) || []).sort();
+  const wantNums = extractNumbers(want);
+  const numbersMatch = (candName) => {
+    const candNums = extractNumbers(norm(candName));
+    return JSON.stringify(candNums) === JSON.stringify(wantNums);
+  };
+
+  // 3. Prefix/starts-with or editionBase match where numbers strictly match
+  for (const it of pool) {
+    const n = norm(it.name);
+    if (!numbersMatch(it.name)) continue;
+    if (n === want || editionBase(n) === editionBase(want)) return it;
+  }
+
+  // 4. Token overlap match where numbers strictly match
+  const qWords = want.split(' ').filter((w) => w.length > 1);
+  let best = null;
+  let bestScore = 0;
+
+  for (const it of pool) {
+    if (!numbersMatch(it.name)) continue;
+    const nWords = norm(it.name).split(' ').filter((w) => w.length > 1);
+    const nSet = new Set(nWords);
+    let matched = 0;
+    for (const w of qWords) {
+      if (nSet.has(w)) matched++;
+    }
+    const score = matched / Math.max(qWords.length, nWords.length);
+    if (score >= 0.85) {
+      if (score > bestScore) {
+        bestScore = score;
+        best = it;
+      }
+    }
+  }
+
+  return best;
 }
 
 /** Choose the best matching product on GOG. */
@@ -142,7 +242,7 @@ function pickBestGog(products, title) {
   let match = products.find((p) => norm(p.title) === want);
   if (!match) {
     match = products.find(
-      (p) => norm(p.title).startsWith(want) || want.startsWith(norm(p.title))
+      (p) => want && norm(p.title) && editionBase(norm(p.title)) === editionBase(want)
     );
   }
   return match || null;
@@ -154,11 +254,7 @@ function pickBestGog(products, title) {
  */
 async function steamLookup(title) {
   try {
-    const res = await fetch(STEAM_SEARCH + encodeURIComponent(title), {
-      credentials: 'omit',
-    });
-    if (!res.ok) throw new Error('steam ' + res.status); // transient: never cache as a miss
-    const data = await res.json();
+    const data = await fetchJson(STEAM_SEARCH + encodeURIComponent(title));
     const items = Array.isArray(data.items) ? data.items : [];
     let best = pickBestSteam(items, title);
 
@@ -171,22 +267,14 @@ async function steamLookup(title) {
         )
         .trim();
       if (base && base !== title) {
-        try {
-          const baseRes = await fetch(STEAM_SEARCH + encodeURIComponent(base), {
-            credentials: 'omit',
-          });
-          if (baseRes.ok) {
-            const baseData = await baseRes.json();
-            const baseItems = Array.isArray(baseData.items) ? baseData.items : [];
-            best = pickBestSteam(baseItems, base);
-          }
-        } catch {
-          // ignore fallback network error
-        }
+        const baseData = await fetchJson(STEAM_SEARCH + encodeURIComponent(base));
+        const baseItems = Array.isArray(baseData.items) ? baseData.items : [];
+        best = pickBestSteam(baseItems, base);
       }
     }
 
     if (!best || !best.id) return null;
+    const rating = await fetchSteamRating(best.id);
     return {
       source: 'steam',
       appid: best.id,
@@ -197,6 +285,7 @@ async function steamLookup(title) {
       headerAlt: steamHeaderAltUrl(best.id),
       banner: steamHeroUrl(best.id),
       tiny: best.tiny_image || null,
+      rating: rating || null,
     };
   } catch (err) {
     if (err && /^steam \d+/.test(err.message)) throw err;
@@ -204,13 +293,11 @@ async function steamLookup(title) {
   }
 }
 
-/** Search GOG public catalog; returns cover URLs or null (errors are treated as a miss). */
+/** Search GOG public catalog; throw on transient failures. */
 async function gogLookup(title) {
   try {
     const q = encodeURIComponent('like:' + title);
-    const res = await fetch(GOG_SEARCH + q, { credentials: 'omit' });
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await fetchJson(GOG_SEARCH + q);
     const products = Array.isArray(data.products) ? data.products : [];
     const best = pickBestGog(products, title);
     if (!best) return null;
@@ -223,99 +310,94 @@ async function gogLookup(title) {
       header: best.coverHorizontal || null,
       tiny: null,
     };
-  } catch {
-    return null;
+  } catch (error) {
+    throw error; // Provider failures are not confirmed misses.
   }
 }
 
-/**
- * Resolve artwork for one title. Steam and GOG are queried IN PARALLEL (the
- * old code ran GOG only after Steam finished, adding a full round-trip).
- * Steam wins when it has a match; GOG supplies a fallback poster / full fallback.
- * Throws when Steam failed transiently and nothing else matched, so the caller
- * does not cache a false "no artwork" result.
- */
+/** Steam is primary; query GOG only when needed. Never cache a provider failure. */
 async function resolveArtwork(title) {
-  const [steamResult, gog] = await Promise.all([
-    steamLookup(title).then(
-      (value) => ({ value, failed: false }),
-      () => ({ value: null, failed: true })
-    ),
-    gogLookup(title).catch(() => null),
-  ]);
-
-  const steam = steamResult.value;
-  if (steam) {
-    if (gog?.poster) steam.gogPoster = gog.poster;
-    return steam;
-  }
-  if (gog) return gog; // GOG fallback for missing posters/games
-  if (steamResult.failed) throw new Error('steam unavailable'); // don't cache a false miss
+  let failed = false;
+  try {
+    const steam = await steamLookup(title);
+    if (steam) return steam;
+  } catch { failed = true; }
+  try {
+    const gog = await gogLookup(title);
+    if (gog) return gog;
+  } catch { failed = true; }
+  if (failed) throw new Error('artwork provider unavailable');
   return null;
 }
 
-/** Network resolve + dedupe of identical in-flight lookups. */
-function resolveFromNetwork(key, title) {
-  if (inflight.has(key)) return inflight.get(key);
-  const p = resolveArtwork(title)
-    .then((data) => ({ ok: true, data }))
-    .catch(() => ({ ok: false, data: null })) // transient failure: don't cache
-    .finally(() => inflight.delete(key));
-  inflight.set(key, p);
-  return p;
-}
-
-// Global limiter so many parallel messages never flood Steam/GOG.
 let active = 0;
 const waiting = [];
 function limited(fn) {
   return new Promise((resolve) => {
-    const run = async () => {
+    const job = { run: null, timer: null };
+    job.run = async () => {
+      clearTimeout(job.timer);
       active++;
-      try {
-        resolve(await fn());
-      } finally {
+      try { resolve(await fn()); }
+      catch { resolve({ ok: false, data: null }); }
+      finally {
         active--;
-        if (waiting.length) waiting.shift()();
+        if (waiting.length) waiting.shift().run();
       }
     };
-    if (active < CONCURRENCY) run();
-    else waiting.push(run);
+    if (active < CONCURRENCY) job.run();
+    else {
+      waiting.push(job);
+      job.timer = setTimeout(() => {
+        const index = waiting.indexOf(job);
+        if (index >= 0) waiting.splice(index, 1);
+        resolve({ ok: false, data: null });
+      }, 5000);
+    }
   });
 }
 
-/**
- * Resolve a list of titles. Cache hits are answered from ONE batched storage
- * read; only genuine misses hit the network (rate-limited), and all new results
- * are persisted with ONE batched write.
- */
+function resolveFromNetwork(key, title) {
+  if (inflight.has(key)) return inflight.get(key);
+  const promise = limited(async () => {
+    // Another queued request may already have populated this key.
+    if (fresh(memory.get(key))) return { ok: true, data: memory.get(key).data };
+    const data = await resolveArtwork(title);
+    await cacheSetMany([[key, data]]);
+    return { ok: true, data };
+  }).finally(() => inflight.delete(key));
+  inflight.set(key, promise);
+  return promise;
+}
+
 async function resolveAll(titles) {
-  const unique = [...new Set(titles)];
-  const keyOf = new Map(unique.map((t) => [t, cacheKey(t)]));
-  const hits = await cacheGetMany([...keyOf.values()]);
-
-  const resolved = {};
-  const fresh_entries = [];
-  await Promise.all(
-    unique.map((t) => {
-      const key = keyOf.get(t);
-      if (hits.has(key)) {
-        resolved[t] = hits.get(key); // cached hit OR cached known-miss
-        return null;
-      }
-      return limited(async () => {
-        const { ok, data } = await resolveFromNetwork(key, t);
-        resolved[t] = data;
-        if (ok) fresh_entries.push([key, data]); // cache real results and confirmed misses (null)
-      });
-    })
-  );
-  if (fresh_entries.length) await cacheSetMany(fresh_entries);
-
-  const out = {};
-  for (const t of titles) out[t] = resolved[t] ?? null;
+  const unique = [...new Set(titles.filter(t => typeof t === 'string' && t.trim() && t.length <= 300))].slice(0, 60);
+  const hits = await cacheGetMany(unique.map(cacheKey));
+  const out = Object.create(null);
+  await Promise.all(unique.map(async title => {
+    const key = cacheKey(title);
+    out[title] = hits.has(key) ? hits.get(key) : (await resolveFromNetwork(key, title)).data;
+  }));
   return out;
 }
+
+// A short renewable lease prevents every tab from crawling the adult archive.
+let adultLease = null;
+chrome.runtime.onMessage.addListener((msg, sender, respond) => {
+  if (!msg || !['adultClaim', 'adultRenew', 'adultRelease'].includes(msg.type)) return false;
+  if (!sender.tab || sender.url?.startsWith('https://fitgirl-repacks.site/') !== true) return false;
+  const owner = sender.tab.id;
+  const now = Date.now();
+  if (msg.type === 'adultClaim') {
+    if (!adultLease || adultLease.expires <= now) adultLease = { owner, token: crypto.randomUUID(), expires: now + 30000 };
+    respond(adultLease.owner === owner ? { token: adultLease.token } : {});
+  } else if (adultLease?.owner === owner && adultLease.token === msg.token) {
+    if (msg.type === 'adultRelease') adultLease = null;
+    else adultLease.expires = now + 30000;
+    respond({ ok: true });
+  } else respond({});
+  return false;
+});
 
 // Content scripts send { type: 'resolveGames', titles: [...] }; we reply with { title: artwork|null }.
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {

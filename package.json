@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "check": "node qa/verify.cjs",
-    "test": "node qa/run.cjs",
+    "test": "node qa/test-audit.cjs && node qa/run.cjs && node qa/test-steam-upcoming.cjs && node qa/test-lightbox-and-comments.cjs",
     "test:smoke": "node qa/extension-smoke.cjs",
     "pack": "node scripts/pack.cjs",
     "build": "node scripts/pack.cjs",
