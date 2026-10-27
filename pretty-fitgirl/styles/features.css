@@ -61,3 +61,6 @@ html.mfg-on #page [hidden] { display: none !important; }
   html.mfg-on[data-mfg-view="list"] #content .mfg-card > footer.entry-meta { grid-row: 3; }
   html.mfg-on[data-mfg-view="list"] #content .mfg-card > .mfg-post-content { grid-row: 4; }
 }
+
+/* Hide posts tagged Adult when the popup option is on. */
+[data-mfg-adult-hidden] { display: none !important; }

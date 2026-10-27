@@ -4,7 +4,7 @@
   if (location.hostname !== "fitgirl-repacks.site" || window.top !== window) return;
   const root = document.documentElement;
   // User preference defaults; the popup writes the same shape to chrome.storage.local under "modernFitGirl".
-  const defaults = { enabled: true, density: "comfortable", view: "grid" };
+  const defaults = { enabled: true, density: "comfortable", view: "grid", hideAdult: false };
   let preferences = { ...defaults };
   // `ready` = DOM parsed; `enhanced` = DOM rewrite applied; `changes` = undo stack used to restore the original page when disabled.
   let ready = false;
@@ -317,6 +317,62 @@
     if (opened) target.scrollIntoView({ block: "start" });
   }
 
+  // Hide posts tagged "Adult" on every page type. Listing/search cards carry the tag in their own markup (tag-adult class / tag link).
+  // Popular and A-Z cards carry no tags, so we build a cached set of adult repack URLs from the site's /tag/adult/ archive.
+  const adultKey = "mfg.adult.v1";
+  const adultUrls = new Set();
+  let adultLoading = false;
+  const pathOf = href => { try { return new URL(href, location.href).pathname.replace(/\/+$/, ""); } catch { return ""; } };
+  function isAdult(article) {
+    if (article.classList.contains("tag-adult")) return true;
+    return [...article.querySelectorAll(".tag-links a, a[rel~=tag]")].some(link => /^\s*adult\s*$/i.test(link.textContent));
+  }
+  // Load (or refresh, once a day) the adult URL set, then re-run the filter.
+  async function loadAdultUrls() {
+    if (adultLoading) return;
+    adultLoading = true;
+    try {
+      const stored = (await chrome.storage.local.get(adultKey))[adultKey];
+      if (stored && Array.isArray(stored.paths)) for (const path of stored.paths) adultUrls.add(path);
+      filterAdult();
+      if (stored && Date.now() - stored.time < 86400000) return;
+      const found = new Set();
+      for (let page = 1; page <= 80; page += 3) {
+        const batch = await Promise.all([page, page + 1, page + 2].map(async number => {
+          try {
+            const response = await fetch(`/tag/adult/${number === 1 ? "" : `page/${number}/`}`, { credentials: "same-origin" });
+            if (!response.ok) return null;
+            const doc = new DOMParser().parseFromString(await response.text(), "text/html");
+            return [...doc.querySelectorAll("article.hentry .entry-title a")].map(link => pathOf(link.href));
+          } catch { return null; }
+        }));
+        for (const paths of batch) for (const path of paths || []) found.add(path);
+        if (batch.some(paths => !paths || !paths.length)) break;
+      }
+      if (found.size) {
+        for (const path of found) adultUrls.add(path);
+        await chrome.storage.local.set({ [adultKey]: { time: Date.now(), paths: [...adultUrls] } });
+        filterAdult();
+      }
+    } catch { /* Tag-based hiding still works without the archive. */ }
+    // adultLoading stays true: the set loads once per page and later toggles are instant.
+    finally { /* no-op */ }
+  }
+  function filterAdult() {
+    const hide = preferences.enabled && preferences.hideAdult;
+    const mark = (node, adult) => { if (hide && adult) node.setAttribute("data-mfg-adult-hidden", ""); else node.removeAttribute("data-mfg-adult-hidden"); };
+    for (const article of document.querySelectorAll("article.hentry")) {
+      const link = article.querySelector(".entry-title a");
+      mark(article, isAdult(article) || (link && adultUrls.has(pathOf(link.href))));
+    }
+    // Popular collections and the A-Z directory: match by repack URL.
+    for (const card of document.querySelectorAll(".widget-grid-view-image, .lcp_catlist > li")) {
+      const link = card.querySelector("a[href]");
+      mark(card, Boolean(link) && adultUrls.has(pathOf(link.href)));
+    }
+    if (hide) loadAdultUrls();
+  }
+
   // Apply preferences: root classes first (pure CSS, instant), DOM enhancement only once the DOM is ready.
   function apply() {
     root.classList.toggle("mfg-on", preferences.enabled);
@@ -325,11 +381,13 @@
       root.dataset.mfgDensity = preferences.density;
       root.dataset.mfgView = preferences.view;
       if (ready) enhance();
+      if (ready) filterAdult();
       syncControls();
     } else {
       delete root.dataset.mfgDensity;
       delete root.dataset.mfgView;
       restore();
+      filterAdult();
     }
   }
 
@@ -338,7 +396,8 @@
     return {
       enabled: typeof value?.enabled === "boolean" ? value.enabled : defaults.enabled,
       density: value?.density === "compact" ? "compact" : defaults.density,
-      view: value?.view === "list" ? "list" : defaults.view
+      view: value?.view === "list" ? "list" : defaults.view,
+      hideAdult: value?.hideAdult === true
     };
   }
 
@@ -356,7 +415,7 @@
     });
   } catch { /* CSS and default presentation still work without storage. */ }
 
-  const start = () => { ready = true; if (preferences.enabled) enhance(); };
+  const start = () => { ready = true; if (preferences.enabled) enhance(); filterAdult(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
   else start();
   window.addEventListener("hashchange", revealHash);
