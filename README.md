@@ -1,19 +1,3 @@
-<div align="center">
-
-# ⭐ Enjoying Pretty FitGirl? ⭐
-
-**Your repack pages just got a glow-up. Give the repo a star and help it glow for others too!**
-
-[![Star this repo](https://img.shields.io/github/stars/MuhammedZohaib/pretty-fitgirl?style=for-the-badge&logo=github&label=%E2%AD%90%20Star%20this%20repo&color=f5c542)](https://github.com/MuhammedZohaib/pretty-fitgirl/stargazers)
-
-*One click for you, a big boost for an open-source project. 💚*
-
-🍴 [Fork it](https://github.com/MuhammedZohaib/pretty-fitgirl/fork) · 🐛 [Report a bug](https://github.com/MuhammedZohaib/pretty-fitgirl/issues/new/choose) · 📣 Tell a friend
-
-</div>
-
----
-
 # Pretty FitGirl
 
 [![CI](https://github.com/MuhammedZohaib/pretty-fitgirl/actions/workflows/ci.yml/badge.svg)](https://github.com/MuhammedZohaib/pretty-fitgirl/actions/workflows/ci.yml)
@@ -144,3 +128,7 @@ Contributions, bug reports, and suggestions are welcome! Please read [CONTRIBUTI
 
 This project is licensed under the [MIT License](LICENSE).  
 Bundled fonts (*Inter* and *Manrope*) are distributed under the [SIL Open Font License](pretty-fitgirl/assets/fonts/Inter-OFL.txt).
+
+---
+
+⭐ **Enjoying Pretty FitGirl? Give the repo a [star](https://github.com/MuhammedZohaib/pretty-fitgirl/stargazers) to show your support and help it glow for others too!** 💚
