@@ -53,14 +53,25 @@ Crafted for speed, legibility, and privacy. Zero tracking, zero build steps, and
 5. Click **Load unpacked** and select the extracted `pretty-fitgirl` folder (the directory containing `manifest.json`).
 6. Navigate to [fitgirl-repacks.site](https://fitgirl-repacks.site/) and enjoy!
 
-### Option 2: From Source
+### Option 2: Firefox (140+)
+
+Firefox needs its own build, because its manifest differs from the Chromium one.
+
+1. Download `pretty-fitgirl-firefox-vX.Y.Z.zip` from [GitHub Releases](https://github.com/MuhammedZohaib/pretty-fitgirl/releases) (or run `npm run pack` and take it from `dist/`).
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on…** and select the zip file (or the `manifest.json` of the extracted archive).
+4. Navigate to [fitgirl-repacks.site](https://fitgirl-repacks.site/). If the theme doesn't apply, open `about:addons`, select Pretty FitGirl, and allow access to the site under **Permissions**.
+
+> Temporary add-ons are removed when Firefox restarts. For a permanent install, use a build signed through [addons.mozilla.org](https://addons.mozilla.org/developers/) (choose "On your own" for a private signed `.xpi`), or use Firefox Developer Edition / Nightly with `xpinstall.signatures.required` set to `false`.
+
+### Option 3: From Source
 
 ```bash
 git clone https://github.com/MuhammedZohaib/pretty-fitgirl.git
 cd pretty-fitgirl
 ```
 
-Load the `pretty-fitgirl` directory directly as an unpacked extension following the instructions above.
+Load the `pretty-fitgirl` directory directly as an unpacked extension in Chromium browsers following the instructions above. For Firefox, run `npm run pack` and load the generated `dist/pretty-fitgirl-firefox-vX.Y.Z.zip`; the source folder's manifest is Chromium-only.
 
 ---
 

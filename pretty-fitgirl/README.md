@@ -9,6 +9,8 @@ An unofficial Manifest V3 extension for `https://fitgirl-repacks.site/` providin
 3. Refresh any open FitGirl tabs.
 4. Click the extension toolbar icon to open the popup for theme toggling, grid/list view, and comfortable/compact spacing.
 
+**Firefox (140+):** use the separate `pretty-fitgirl-firefox-vX.Y.Z.zip` build (`npm run pack`, output in `dist/`). Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and select the zip. Temporary add-ons are removed on restart; permanent installs need a build signed via addons.mozilla.org.
+
 The theme toggle immediately switches between Pretty FitGirl and the original website styling.
 
 ## Layout and features
