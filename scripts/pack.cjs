@@ -143,7 +143,27 @@ const standardZip = path.join(root, 'pretty-fitgirl.zip');
 createZip(files, versionedZip);
 createZip(files, standardZip);
 
+// Firefox build: same sources, but the manifest differs. Firefox does not support
+// background.service_worker (it uses event pages via background.scripts) and requires a gecko add-on ID.
+// The manifest sits at the archive root, as required by addons.mozilla.org.
+const firefoxManifest = { ...manifest };
+delete firefoxManifest.minimum_chrome_version;
+firefoxManifest.background = { scripts: [manifest.background.service_worker] };
+firefoxManifest.browser_specific_settings = {
+  gecko: {
+    id: 'pretty-fitgirl@fitgirl-repacks.github',
+    strict_min_version: '140.0',
+    data_collection_permissions: { required: ['none'] },
+  },
+};
+const firefoxFiles = collectFiles(extDir).map((f) =>
+  f.name === 'manifest.json' ? { name: f.name, content: Buffer.from(JSON.stringify(firefoxManifest, null, 2) + '\n') } : f
+);
+const firefoxZip = path.join(distDir, `pretty-fitgirl-firefox-v${version}.zip`);
+createZip(firefoxFiles, firefoxZip);
+
 const sizeKb = (fs.statSync(standardZip).size / 1024).toFixed(1);
 console.log(`Successfully packaged Pretty FitGirl v${version}`);
 console.log(`- ${path.relative(root, standardZip)} (${sizeKb} KB)`);
 console.log(`- ${path.relative(root, versionedZip)} (${sizeKb} KB)`);
+console.log(`- ${path.relative(root, firefoxZip)} (${(fs.statSync(firefoxZip).size / 1024).toFixed(1)} KB, Firefox)`);

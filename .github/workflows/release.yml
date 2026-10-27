@@ -86,11 +86,19 @@ jobs:
 
           ### 📦 Installation
 
+          **Chrome / Edge / Chromium browsers**
+
           1. Download `pretty-fitgirl-${{ steps.vars.outputs.tag }}.zip` below.
           2. Extract the archive into a local folder.
           3. Open your browser's extension manager (`chrome://extensions` or `edge://extensions`).
           4. Enable **Developer mode**.
           5. Click **Load unpacked** and select the extracted `pretty-fitgirl` directory.
+
+          **Firefox (140+)**
+
+          1. Download `pretty-fitgirl-firefox-${{ steps.vars.outputs.tag }}.zip` below.
+          2. Open `about:debugging#/runtime/this-firefox` and click **Load Temporary Add-on…**, then select the zip (or its `manifest.json` once extracted).
+          3. Temporary add-ons are removed on restart; permanent installs require a signed build from addons.mozilla.org.
 
           ### 🔒 Integrity Checksums (SHA256)
 
