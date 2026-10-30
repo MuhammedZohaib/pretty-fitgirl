@@ -38,7 +38,20 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
       return route.abort();
     });
 
-    await page.goto('https://fitgirl-repacks.site/');
+    await page.goto('https://fitgirl-repacks.site/upcoming-repacks-10/');
+
+    // The live page can exceed the old 60-card boundary. Add eleven fixtures so
+    // the regression proves every announced title is converted.
+    await page.evaluate(() => {
+      const existing = [...document.querySelectorAll('article .entry-content span')].filter(span => /^[\s\u00a0]*[→↣⇢➔➜➤➡⮕➝➢]+/.test(span.textContent || ''));
+      const container = existing[0]?.parentElement;
+      if (!container) return;
+      for (let index = 1; index <= 11; index++) {
+        const span = document.createElement('span');
+        span.textContent = `⇢ Overflow Test Game ${index}`;
+        container.append(span, document.createElement('br'));
+      }
+    });
 
     const css = manifest.content_scripts[0].css
       .map(file => fs.readFileSync(path.join(extension, file), 'utf8'))
@@ -62,6 +75,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
                   source: 'steam',
                   appid: 12345,
                   name: title,
+                  rating: { percent: 87, desc: 'Very Positive', total: 24000 },
                   poster: `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/12345/library_600x900.jpg`,
                   header: `https://cdn.cloudflare.steamstatic.com/steam/apps/12345/header.jpg`,
                   tiny: `https://cdn.cloudflare.steamstatic.com/steam/apps/12345/capsule_sm_120.jpg`
@@ -96,12 +110,33 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
     await page.addScriptTag({ content: js });
     await page.waitForTimeout(500);
 
-    // Verify Upcoming Repacks enhancement as Cards
+    // Verify Upcoming Repacks uses the same artwork-and-title card contract.
     const upcomingCards = await page.locator('.mfg-upcoming-card-item').count();
     console.log(`Found ${upcomingCards} upcoming repack cards`);
-    assert(upcomingCards > 0, 'No upcoming repack cards were created');
+    assert.equal(upcomingCards, 71, 'Not every upcoming repack was converted into a card');
+    const upcomingNav = page.locator('.mfg-browse-sidebar .mfg-nav-link', { hasText: 'Upcoming repacks' });
+    assert.equal(await upcomingNav.count(), 1, 'Upcoming repacks was not added to the Browse sidebar');
+    assert.equal(await upcomingNav.getAttribute('aria-current'), 'page', 'Upcoming sidebar link was not marked current');
+    assert.equal(await upcomingNav.getAttribute('href'), '/upcoming-repacks-10/');
+    assert(await page.locator('.mfg-upcoming-card > .entry-header').evaluate(header => header.hidden), 'Original Upcoming heading was not hidden');
+    assert.equal(await page.locator('.mfg-upcoming-page-header').count(), 1, 'Dedicated upcoming-page header was not created');
+    assert.equal(await page.locator('.mfg-upcoming-filter').count(), 1, 'Upcoming-page filter was not created');
+    const upcomingFlow = await page.locator('.mfg-upcoming-container').evaluate(container => {
+      const style = getComputedStyle(container);
+      return { maxHeight: style.maxHeight, overflowY: style.overflowY };
+    });
+    assert.deepEqual(upcomingFlow, { maxHeight: 'none', overflowY: 'visible' }, 'Upcoming cards are still trapped in an internal scrolling container');
+    assert.match(await page.locator('.mfg-upcoming-page-status').textContent(), new RegExp(`^${upcomingCards} games currently listed$`));
+    const unconverted = await page.locator('.mfg-upcoming-card .entry-content span').evaluateAll(spans => spans.filter(span => /^[\s\u00a0]*[→↣⇢➔➜➤➡⮕➝➢]+/.test(span.textContent || '') && !span.closest('.mfg-upcoming-card-item')).length);
+    assert.equal(unconverted, 0, 'Upcoming game text remained outside the card grid');
+    await page.locator('.mfg-upcoming-filter').evaluate(field => { field.value = 'definitely-no-such-game'; field.dispatchEvent(new Event('input', { bubbles: true })); });
+    assert.equal(await page.locator('.mfg-upcoming-card-item').evaluateAll(cards => cards.filter(card => !card.hidden).length), 0, 'Upcoming-page filter did not hide non-matches');
+    assert.equal(await page.locator('.mfg-upcoming-page-status').textContent(), `0 of ${upcomingCards} games`);
+    await page.locator('.mfg-upcoming-filter').evaluate(field => { field.value = ''; field.dispatchEvent(new Event('input', { bubbles: true })); });
+    assert.equal(await page.locator('.mfg-upcoming-card-item').evaluateAll(cards => cards.filter(card => !card.hidden).length), upcomingCards, 'Clearing the upcoming-page filter did not restore cards');
 
     const firstCard = page.locator('.mfg-upcoming-card-item').first();
+    assert(await firstCard.evaluate(card => card.classList.contains('mfg-game-card')), 'Upcoming card is missing the shared game-card class');
     const posterLink = firstCard.locator('.mfg-upcoming-poster-link');
     const firstHref = await posterLink.getAttribute('href');
     console.log('Sample card YouTube gameplay link:', firstHref);
@@ -119,24 +154,39 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
     const imgSrc = await firstImg.getAttribute('src');
     assert(imgSrc.includes('library_600x900.jpg') || imgSrc.includes('steamstatic.com'), 'Card image is not a vertical poster');
 
-    const playBadge = firstCard.locator('.mfg-upcoming-play-badge');
-    assert(await playBadge.count() > 0, 'Play overlay badge is missing');
-
-    const actionBtn = firstCard.locator('.mfg-upcoming-action-btn');
-    assert(await actionBtn.count() > 0, 'Action gameplay button is missing');
+    assert.equal(await firstCard.locator('.mfg-upcoming-play-badge, .mfg-upcoming-badges, .mfg-upcoming-action-btn').count(), 0, 'Upcoming card contains secondary metadata or a duplicate action');
+    assert((await firstCard.locator('.mfg-upcoming-title').innerText()).trim(), 'Upcoming card title is missing');
 
     // Check posterBox HTML
     const posterHtml = await firstCard.locator('.mfg-upcoming-poster-box').innerHTML();
     console.log('Sample poster box HTML:\n', posterHtml);
 
-    // Verify Source Badges
+    const rating = firstCard.locator('.mfg-steam-rating');
+    await rating.waitFor();
+    assert.equal(await rating.locator('.mfg-rating-percent').innerText(), '87%', 'Steam rating percentage is not visible');
+    assert.notEqual(await rating.evaluate(node => getComputedStyle(node).display), 'none', 'Steam rating is hidden');
+
+    // Original artwork is unlabeled; fetched artwork discloses its provider on hover.
     const originalBadges = await page.locator('.mfg-cover-source-original').count();
     console.log(`Original cover badges: ${originalBadges}`);
-    assert(originalBadges > 0, 'No original cover badges found');
+    assert.equal(originalBadges, 0, 'Original artwork should not have a provider badge');
 
     const steamBadges = await page.locator('.mfg-cover-source-steam').count();
     console.log(`Steam source badges: ${steamBadges}`);
     assert(steamBadges > 0, 'No Steam source badges found');
+    const steamBadge = firstCard.locator('.mfg-cover-source-steam');
+    assert.equal(await steamBadge.innerText(), 'Fetched from Steam');
+    assert.equal(await steamBadge.evaluate(node => getComputedStyle(node).opacity), '0', 'Fetched artwork label should rest hidden');
+    await firstCard.locator('.mfg-upcoming-poster-box').hover();
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('.mfg-upcoming-card-item .mfg-cover-source-steam')).opacity === '1');
+    const sourcePolicy = await page.evaluate(() => {
+      const probe = document.createElement('div');
+      MFGRepack.setSourceBadge(probe, 'gog');
+      const gog = probe.querySelector('.mfg-cover-source-gog')?.textContent;
+      MFGRepack.setSourceBadge(probe, 'original');
+      return { gog, originalLabels: probe.querySelectorAll('.mfg-cover-badge').length };
+    });
+    assert.deepEqual(sourcePolicy, { gog: 'Fetched from GOG', originalLabels: 0 });
 
     // Verify Clean Restoration on Disable
     await page.evaluate(() => window.changePreferences({ enabled: false }));
@@ -152,7 +202,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'
     assert(await page.locator('.mfg-upcoming-card-item').count() > 0, 'Upcoming repack cards did not restore when re-enabled');
 
     assert.deepEqual(errors, [], 'Page errors detected during test');
-    console.log('PASS: Steam cover fallback and Upcoming Repacks fully validated!');
+    console.log('PASS: Steam artwork fallback and shared artwork/title cards fully validated!');
   } finally {
     await browser.close();
   }

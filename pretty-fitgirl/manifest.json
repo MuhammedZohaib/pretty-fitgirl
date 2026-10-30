@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pretty FitGirl",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "An unofficial minimal dark theme with cover cards and organised navigation for the original FitGirl Repacks website.",
   "minimum_chrome_version": "105",
   "permissions": [
@@ -19,6 +19,7 @@
     {
       "resources": [
         "assets/logo.png",
+        "assets/cover-unavailable.png",
         "assets/fonts/*.woff2"
       ],
       "matches": [
@@ -65,13 +66,16 @@
         "styles/features.css",
         "styles/repack.css",
         "styles/refinements.css",
-        "styles/experience.css"
+        "styles/experience.css",
+        "styles/polish.css"
       ],
       "js": [
         "scripts/repack.js",
         "scripts/navigation.js",
         "scripts/directory.js",
         "scripts/experience.js",
+        "scripts/footer.js",
+        "scripts/prefetch.js",
         "scripts/enhancements.js"
       ]
     },

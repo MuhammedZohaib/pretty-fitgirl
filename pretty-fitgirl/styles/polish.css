@@ -1,0 +1,1251 @@
+/*
+ * Product polish layer.
+ *
+ * The upstream site is content-heavy, so the visual system stays deliberately
+ * quiet: one accent, real borders, no decorative gradients, and clear content
+ * hierarchy. This file is loaded last to resolve legacy WordPress specificity
+ * without making the transformation scripts presentation-aware.
+ */
+
+/* Foundation ------------------------------------------------------------- */
+html.mfg-on {
+  --geist-canvas: #10100f;
+  --geist-canvas-elevated: #191918;
+  --geist-hairline-soft: #21211f;
+  --geist-hairline: #30302c;
+  --geist-hairline-strong: #48473f;
+  --geist-hairline-hover: #68665b;
+  --geist-ink: #f3f0e7;
+  --geist-body: #c7c1b5;
+  --geist-mute: #99938a;
+  --geist-faint: #746f67;
+  --geist-primary: #e0b875;
+  --geist-on-primary: #1b150c;
+  --geist-link: #e0b875;
+  --geist-link-deep: #c99e5d;
+  --geist-link-soft: #f1d29f;
+  --geist-cyan: #e0b875;
+  --geist-radius-sm: 7px;
+  --geist-radius-md: 10px;
+  --geist-radius-lg: 12px;
+  --mfg-soft-accent: rgba(224, 184, 117, .09);
+  --mfg-shadow: 0 1px 0 rgba(255, 255, 255, .018);
+  --mfg-speed: 160ms;
+  --mfg-shell-width: min(calc(100% - 3rem), 108rem);
+  background: var(--geist-canvas);
+}
+
+html.mfg-on body,
+html.mfg-on #page {
+  background: var(--geist-canvas);
+}
+
+html.mfg-on #page :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--geist-primary);
+  outline-offset: 3px;
+}
+
+html.mfg-on #page ::selection {
+  background: var(--geist-primary);
+  color: var(--geist-on-primary);
+}
+
+/* App header ------------------------------------------------------------- */
+html.mfg-on #masthead {
+  min-height: 4.25rem;
+  grid-template-columns: minmax(12rem, 1fr) minmax(18rem, 28rem);
+  align-items: center;
+  column-gap: 2rem;
+  padding-inline: max(1.5rem, calc((100% - 108rem) / 2));
+  background: rgba(16, 16, 15, .97);
+  border-bottom-color: var(--geist-hairline);
+}
+
+html.mfg-on #masthead .site-title {
+  padding-block: .875rem;
+  font-size: 1.125rem;
+  letter-spacing: -.035em;
+}
+
+html.mfg-on #page #masthead .mfg-site-logo {
+  width: 2.125rem;
+  height: 2.125rem;
+  margin-right: .75rem;
+  border: 1px solid var(--geist-hairline);
+  border-radius: 8px;
+}
+
+html.mfg-on #masthead .search-form {
+  min-height: 2.625rem;
+  padding: 3px;
+  border-color: var(--geist-hairline-strong);
+  background: var(--geist-canvas-elevated);
+}
+
+html.mfg-on #masthead .search-form:focus-within {
+  border-color: var(--geist-primary);
+  box-shadow: 0 0 0 3px rgba(224, 184, 117, .08);
+}
+
+html.mfg-on #page #masthead .search-field,
+html.mfg-on #page #masthead .search-submit {
+  height: 2.125rem;
+}
+
+html.mfg-on #page #masthead .search-submit {
+  min-width: 4.5rem;
+  border-left-color: var(--geist-hairline);
+}
+
+/* Primary shell ---------------------------------------------------------- */
+html.mfg-on #main {
+  grid-template-columns: 13rem minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 3rem 2rem;
+  padding: 2rem 0 4.5rem;
+}
+
+html.mfg-on #main #primary {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+html.mfg-on #main > .mfg-browse-sidebar {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  top: calc(var(--mfg-header-height) + 1.5rem);
+  padding-right: 1.25rem;
+  border-right: 1px solid var(--geist-hairline);
+}
+
+html.mfg-on #page .mfg-browse-heading {
+  margin: 0 0 1rem;
+  padding: 0 .5rem 1rem;
+  border-bottom: 1px solid var(--geist-hairline);
+}
+
+html.mfg-on #page .mfg-browse-heading h2 {
+  margin: 0;
+  color: var(--geist-ink);
+  font: 650 1rem/1.3 var(--mfg-heading);
+  letter-spacing: -.025em;
+  text-transform: none;
+}
+
+html.mfg-on #page .mfg-browse-heading p {
+  margin: .25rem 0 0;
+  color: var(--geist-faint);
+  font: 400 .6875rem/1.5 var(--mfg-font);
+}
+
+/* Secondary site utilities live behind one intentional disclosure in Browse. */
+html.mfg-on .mfg-browse-sidebar > .mfg-promo-sidebar {
+  margin: 1.25rem 0 0;
+  border: 1px solid var(--geist-hairline);
+  border-radius: var(--geist-radius-md);
+  background: var(--geist-canvas-elevated);
+  overflow: hidden;
+}
+
+html.mfg-on .mfg-browse-sidebar > .mfg-promo-sidebar > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3.5rem;
+  padding: .625rem .75rem;
+  color: var(--geist-body);
+  font-size: .75rem;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+html.mfg-on .mfg-promo-summary-copy {
+  display: grid;
+  gap: .125rem;
+  min-width: 0;
+}
+
+html.mfg-on .mfg-promo-summary-copy strong {
+  color: var(--geist-ink);
+  font-size: .75rem;
+  line-height: 1.35;
+}
+
+html.mfg-on .mfg-promo-summary-copy small {
+  overflow: hidden;
+  color: var(--geist-faint);
+  font-size: .625rem;
+  font-weight: 400;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+html.mfg-on .mfg-browse-sidebar > .mfg-promo-sidebar > summary::-webkit-details-marker { display: none; }
+html.mfg-on .mfg-browse-sidebar > .mfg-promo-sidebar > summary::after { content: "+"; color: var(--geist-mute); font-size: .875rem; font-weight: 400; }
+html.mfg-on .mfg-browse-sidebar > .mfg-promo-sidebar[open] > summary::after { content: "−"; }
+html.mfg-on .mfg-browse-sidebar > .mfg-promo-sidebar > summary:hover { color: var(--geist-ink); background: var(--geist-hairline-soft); }
+
+html.mfg-on .mfg-promo-body {
+  padding: 0 .75rem .5rem;
+  border-top: 1px solid var(--geist-hairline);
+}
+
+html.mfg-on .mfg-promo-body .mfg-side-panel:last-child { border-bottom: 0; }
+html.mfg-on .mfg-promo-body .mfg-side-panel > summary { min-height: 2.75rem; font-size: .6875rem; }
+html.mfg-on .mfg-promo-body .mfg-side-content { max-height: 18rem; }
+
+html.mfg-on #page .mfg-nav-group {
+  margin: 1.125rem .625rem .375rem;
+  color: var(--geist-faint);
+  font: 600 .625rem/1.5 var(--mfg-font);
+  letter-spacing: .09em;
+}
+
+html.mfg-on #page .mfg-nav-group:first-child { margin-top: 0; }
+
+html.mfg-on .mfg-browse-sidebar > nav {
+  gap: .1875rem;
+}
+
+html.mfg-on #page .mfg-browse-sidebar > nav a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  min-height: 2.375rem;
+  padding: .5625rem 1.75rem .5625rem .75rem;
+  border: 1px solid transparent;
+  color: var(--geist-body);
+  font-size: .8125rem;
+}
+
+html.mfg-on #page .mfg-browse-sidebar > nav a::after {
+  content: "›";
+  position: absolute;
+  right: .75rem;
+  color: var(--geist-faint);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  opacity: 0;
+  transform: translateX(-.25rem);
+  transition: opacity var(--mfg-speed), transform var(--mfg-speed), color var(--mfg-speed);
+}
+
+html.mfg-on #page .mfg-browse-sidebar > nav a:hover {
+  border-color: var(--geist-hairline);
+  background: var(--geist-hairline-soft);
+}
+
+html.mfg-on #page .mfg-browse-sidebar > nav a:is(:hover, :focus-visible)::after,
+html.mfg-on #page .mfg-browse-sidebar > nav a[aria-current="page"]::after {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--geist-primary);
+}
+
+html.mfg-on #page .mfg-browse-sidebar > nav a[aria-current="page"] {
+  border-color: rgba(224, 184, 117, .24);
+  background: var(--mfg-soft-accent);
+  color: var(--geist-ink);
+  box-shadow: inset 2px 0 var(--geist-primary);
+}
+
+html.mfg-on .mfg-side-panel > summary {
+  min-height: 3.125rem;
+  color: var(--geist-body);
+}
+
+html.mfg-on .mfg-side-panel > summary:hover {
+  color: var(--geist-ink);
+}
+
+/* Library controls ------------------------------------------------------- */
+html.mfg-on .mfg-toolbar {
+  min-height: 5.5rem;
+  padding-bottom: 1.25rem;
+}
+
+html.mfg-on #page .mfg-toolbar h2 {
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-weight: 650;
+  letter-spacing: -.045em;
+}
+
+html.mfg-on .mfg-toolbar p {
+  margin-top: .375rem;
+  color: var(--geist-mute);
+}
+
+html.mfg-on #content .mfg-updates {
+  border-color: var(--geist-hairline-strong);
+  border-radius: var(--geist-radius-md);
+  background: var(--geist-canvas-elevated);
+}
+
+html.mfg-on #content .mfg-updates > summary {
+  min-height: 3.5rem;
+  padding-inline: 1rem;
+}
+
+/* Game cards ------------------------------------------------------------- */
+html.mfg-on #content .hentry,
+html.mfg-on #content.mfg-directory .mfg-directory-card {
+  border-color: var(--geist-hairline);
+  background: var(--geist-canvas-elevated);
+  box-shadow: var(--mfg-shadow);
+}
+
+html.mfg-on #content .mfg-card:is(:hover, :focus-within),
+html.mfg-on #content.mfg-directory .mfg-directory-card:is(:hover, :focus-within) {
+  border-color: var(--geist-hairline-hover);
+}
+
+html.mfg-on #content .mfg-cover {
+  background: #24221e;
+}
+
+html.mfg-on #content .mfg-cover img {
+  transition: opacity var(--mfg-speed);
+}
+
+html.mfg-on #content .mfg-card:hover .mfg-cover img {
+  opacity: .94;
+}
+
+html.mfg-on .mfg-cover::after {
+  right: .625rem;
+  bottom: .625rem;
+  padding: .375rem .625rem;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+
+html.mfg-on #content .mfg-game > .entry-header {
+  padding: 1rem;
+}
+
+html.mfg-on #content .mfg-game > .entry-header .entry-title {
+  font-size: .9375rem;
+  font-weight: 650;
+  line-height: 1.45;
+  letter-spacing: -.025em;
+}
+
+html.mfg-on #content .mfg-game > .mfg-card-information {
+  padding-inline: 1rem;
+}
+
+/* Explicit placement keeps hidden mobile tags from collapsing the action row. */
+html.mfg-on #content .mfg-card-facts { grid-row: 1; }
+html.mfg-on #content .mfg-card-languages { grid-row: 2; }
+html.mfg-on #content .mfg-card-tags { grid-row: 3; }
+html.mfg-on #content .mfg-repack-link { grid-row: 4; }
+
+html.mfg-on #content .mfg-card-facts dt,
+html.mfg-on #content .mfg-card-languages dt {
+  color: var(--geist-mute);
+}
+
+html.mfg-on #content .mfg-card-facts dd {
+  font-variant-numeric: tabular-nums;
+}
+
+html.mfg-on #content .mfg-repack-link {
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  border-top-color: var(--geist-hairline);
+}
+
+html.mfg-on #page #content .mfg-card-tags a {
+  color: var(--geist-body);
+}
+
+/* Four useful columns once cards have enough room, independent of viewport chrome. */
+@media (min-width: 84em) {
+  html.mfg-on body:is(.home, .archive, .search) #content {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 112em) {
+  html.mfg-on body:is(.home, .archive, .search) #content:not(.mfg-eight-games, [data-mfg-game-count="8"]) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Detail page ------------------------------------------------------------ */
+html.mfg-on #content .mfg-game-detail {
+  overflow: hidden;
+}
+
+html.mfg-on #content .entry-header.mfg-detail-hero {
+  padding: 1.5rem;
+  gap: 1.25rem;
+  background: var(--geist-canvas-elevated);
+}
+
+html.mfg-on #content .mfg-hero-main {
+  grid-template-columns: 7.25rem minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+html.mfg-on #content .mfg-hero-main > .mfg-detail-art {
+  border-color: var(--geist-hairline-strong);
+  box-shadow: none;
+}
+
+html.mfg-on #page #content .mfg-hero-content .entry-title {
+  max-width: 46ch;
+  font-size: clamp(1.625rem, 2.1vw, 2.25rem);
+  font-weight: 650;
+  line-height: 1.17;
+  letter-spacing: -.045em;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+html.mfg-on #content .mfg-detail-alert {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: .875rem 1rem;
+  border-color: rgba(245, 166, 35, .3);
+  border-radius: 8px;
+  background: rgba(245, 166, 35, .075);
+}
+
+html.mfg-on #page #content .entry-header .mfg-game-info {
+  padding-top: 1.125rem !important;
+}
+
+html.mfg-on #content .mfg-badge,
+html.mfg-on #content .entry-header .mfg-info-item[data-field="genres"] a {
+  border-radius: 5px !important;
+}
+
+html.mfg-on #content .mfg-tabs {
+  position: sticky;
+  top: calc(var(--mfg-header-height) + .5rem);
+  z-index: 12;
+  border-color: var(--geist-hairline-strong);
+  background: rgba(25, 25, 24, .97);
+}
+
+html.mfg-on #page #content .mfg-tab[aria-selected="true"],
+html.mfg-on #page #content .mfg-seg-btn[aria-pressed="true"] {
+  color: var(--geist-primary);
+  box-shadow: inset 0 0 0 1px var(--geist-hairline-strong);
+}
+
+html.mfg-on #content .mfg-direct-sources > ul > li,
+html.mfg-on #content .mfg-torrent-sources > ul > li {
+  border-color: var(--geist-hairline);
+}
+
+/* Custom footer ---------------------------------------------------------- */
+html.mfg-on #colophon {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--geist-hairline);
+  background: #0c0c0b;
+  color: var(--geist-body);
+}
+
+html.mfg-on #colophon .mfg-footer-shell {
+  width: var(--mfg-shell-width);
+  max-width: none;
+  margin: 0 auto;
+  padding: 3.5rem 0 1.75rem;
+  scroll-margin-top: calc(var(--mfg-header-height) + 1rem);
+}
+
+html.mfg-on #colophon .mfg-footer-popular {
+  margin: 0;
+  padding: 0 0 3rem;
+}
+
+html.mfg-on #colophon .mfg-footer-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin: 0 0 1.5rem;
+}
+
+html.mfg-on #colophon .mfg-footer-eyebrow {
+  margin: 0 0 .375rem;
+  color: var(--geist-primary);
+  font: 600 .6875rem/1.5 var(--mfg-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+html.mfg-on #colophon .mfg-footer-heading h2 {
+  margin: 0;
+  color: var(--geist-ink);
+  font: 650 clamp(1.5rem, 2.5vw, 2rem)/1.2 var(--mfg-heading);
+  letter-spacing: -.045em;
+}
+
+html.mfg-on #colophon .mfg-footer-description {
+  margin: .5rem 0 0;
+  color: var(--geist-mute);
+  font-size: .8125rem;
+}
+
+html.mfg-on #colophon .mfg-footer-chart-link {
+  flex: 0 0 auto;
+  padding: .625rem .75rem;
+  border: 1px solid var(--geist-hairline-strong);
+  border-radius: 7px;
+  color: var(--geist-body);
+  font-size: .75rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+html.mfg-on #colophon .mfg-footer-chart-link:hover {
+  border-color: var(--geist-primary);
+  color: var(--geist-primary);
+}
+
+html.mfg-on #colophon .mfg-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: .625rem;
+}
+
+html.mfg-on #colophon .mfg-footer-card {
+  float: none;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--geist-hairline);
+  border-radius: var(--geist-radius-md);
+  background: var(--geist-canvas-elevated);
+  overflow: hidden;
+  transition: border-color var(--mfg-speed);
+}
+
+html.mfg-on #colophon .mfg-footer-card:is(:hover, :focus-within) {
+  border-color: var(--geist-hairline-hover);
+}
+
+html.mfg-on #colophon .mfg-footer-card > a {
+  display: grid;
+  grid-template-rows: auto 5.75rem;
+  height: 100%;
+  color: var(--geist-ink);
+  text-decoration: none;
+}
+
+html.mfg-on #colophon .mfg-footer-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: #24221e;
+  object-fit: cover;
+  transition: opacity var(--mfg-speed);
+}
+
+html.mfg-on #colophon .mfg-footer-card:hover img { opacity: .92; }
+
+html.mfg-on #colophon .mfg-footer-card-copy {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: .5rem;
+  min-width: 0;
+  padding: .875rem;
+  border-top: 1px solid var(--geist-hairline);
+}
+
+html.mfg-on #colophon .mfg-footer-rank {
+  color: var(--geist-primary);
+  font: 500 .6875rem/1.5 var(--mfg-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+html.mfg-on #colophon .mfg-footer-card-title {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--geist-ink);
+  font-size: .8125rem;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -.015em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+html.mfg-on #colophon .mfg-footer-utility {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(8rem, 11rem));
+  gap: 2rem;
+  align-items: start;
+  padding: 2rem 0 0;
+  border-top: 1px solid var(--geist-hairline);
+}
+
+html.mfg-on #colophon .mfg-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+}
+
+html.mfg-on #colophon .mfg-footer-brand img {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0;
+  border: 1px solid var(--geist-hairline);
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+html.mfg-on #colophon .mfg-footer-brand strong,
+html.mfg-on #colophon .mfg-footer-brand span {
+  display: block;
+}
+
+html.mfg-on #colophon .mfg-footer-brand strong {
+  margin-bottom: .125rem;
+  color: var(--geist-ink);
+  font-size: .875rem;
+}
+
+html.mfg-on #colophon .mfg-footer-brand span {
+  max-width: 46ch;
+  color: var(--geist-mute);
+  font-size: .6875rem;
+  line-height: 1.6;
+}
+
+html.mfg-on #colophon .mfg-footer-links {
+  display: grid;
+  gap: .4375rem;
+}
+
+html.mfg-on #colophon .mfg-footer-links strong {
+  margin-bottom: .25rem;
+  color: var(--geist-ink);
+  font-size: .75rem;
+}
+
+html.mfg-on #colophon .mfg-footer-links a {
+  width: fit-content;
+  color: var(--geist-mute);
+  font-size: .75rem;
+  text-decoration: none;
+}
+
+html.mfg-on #colophon .mfg-footer-links a:hover { color: var(--geist-primary); }
+
+html.mfg-on #colophon .mfg-footer-card[data-mfg-adult-hidden] { display: none; }
+
+/* Responsive ------------------------------------------------------------- */
+@media (max-width: 75em) {
+  html.mfg-on #main {
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: 2.5rem 1.5rem;
+  }
+
+}
+
+@media (max-width: 60em) {
+  html.mfg-on {
+    --mfg-shell-width: calc(100% - 2.5rem);
+  }
+
+  html.mfg-on #main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  html.mfg-on #main #primary {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  html.mfg-on #main > .mfg-browse-sidebar {
+    grid-column: 1;
+    grid-row: 1;
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  html.mfg-on #colophon .mfg-footer-grid {
+    grid-template-columns: repeat(10, minmax(7rem, 1fr));
+    overflow-x: auto;
+    padding-bottom: .5rem;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }
+
+  html.mfg-on #colophon .mfg-footer-card { scroll-snap-align: start; }
+
+  html.mfg-on #masthead {
+    grid-template-columns: minmax(0, 1fr) auto minmax(15rem, 21rem);
+  }
+}
+
+@media (max-width: 44em) {
+  html.mfg-on {
+    --mfg-shell-width: calc(100% - 2rem);
+    --mfg-header-height: 7.75rem;
+  }
+
+  html.mfg-on #masthead {
+    min-height: 7.75rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 3.875rem 3.875rem;
+    padding: 0 1rem;
+  }
+
+  html.mfg-on #masthead .site-title {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 1rem;
+  }
+
+  html.mfg-on #page #masthead .mfg-browse-toggle {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 2.5rem;
+  }
+
+  html.mfg-on #masthead #search-container {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  html.mfg-on #main {
+    padding-top: 1.5rem;
+  }
+
+  html.mfg-on .mfg-toolbar {
+    min-height: 0;
+    align-items: flex-start;
+    padding-bottom: 1.25rem;
+  }
+
+  html.mfg-on #page .mfg-toolbar h2 {
+    font-size: 1.5rem;
+  }
+
+  html.mfg-on #content .mfg-updates > summary {
+    min-height: 3.375rem;
+  }
+
+  html.mfg-on body:is(.home, .archive, .search) #content {
+    gap: 1rem .875rem;
+  }
+
+  html.mfg-on #page #content .mfg-game {
+    grid-template-rows: auto 8.25rem 10.75rem;
+  }
+
+  html.mfg-on #content .mfg-game > .entry-header {
+    grid-template-rows: 1rem 3.6em 1rem 1.25rem;
+    gap: .375rem;
+    padding: .75rem;
+  }
+
+  html.mfg-on #content .mfg-game > .entry-header .entry-title {
+    height: 3.6em;
+    font-size: .8125rem;
+    line-height: 1.35;
+    -webkit-line-clamp: 3;
+  }
+
+  html.mfg-on #content .mfg-game > .mfg-card-information {
+    grid-template-rows: 5.25rem 2rem 0 3.5rem;
+    padding-inline: .75rem;
+  }
+
+  html.mfg-on #content .mfg-card-facts {
+    height: 5.25rem;
+    padding-top: .5rem;
+  }
+
+  html.mfg-on #content .mfg-card-languages {
+    height: 2rem;
+    flex-direction: row;
+    align-items: baseline;
+    gap: .25rem;
+  }
+
+  html.mfg-on #content .mfg-card-languages dd {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  html.mfg-on #content .mfg-card-tags {
+    display: none;
+  }
+
+  html.mfg-on #content .mfg-repack-link {
+    min-height: 3.5rem;
+    margin-inline: -.75rem;
+    padding-inline: .75rem;
+  }
+
+  /* Fix the legacy responsive rule that put the hero and info card side by side. */
+  html.mfg-on #page #content .entry-header.mfg-detail-hero {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 1rem !important;
+    gap: 1rem !important;
+  }
+
+  html.mfg-on #content .mfg-hero-main {
+    grid-template-columns: 5.75rem minmax(0, 1fr) !important;
+    gap: 1rem !important;
+    min-width: 0;
+  }
+
+  html.mfg-on #content .mfg-hero-main > .mfg-detail-art {
+    width: 5.75rem;
+  }
+
+  html.mfg-on #page #content .mfg-hero-content .entry-title {
+    max-width: none;
+    font-size: clamp(1.25rem, 6.4vw, 1.55rem);
+    line-height: 1.15;
+    letter-spacing: -.04em;
+    overflow-wrap: anywhere;
+  }
+
+  html.mfg-on #content .mfg-detail-badges {
+    grid-column: auto;
+    gap: .25rem;
+  }
+
+  html.mfg-on #content .mfg-badge {
+    padding: .1875rem .4375rem;
+    font-size: .6875rem;
+  }
+
+  html.mfg-on #content .mfg-detail-alert {
+    width: 100%;
+    padding: .75rem .875rem;
+  }
+
+  html.mfg-on #page #content .entry-header .mfg-game-info {
+    grid-column: 1 !important;
+    width: 100%;
+    padding: 1rem !important;
+  }
+
+  html.mfg-on #content .entry-header .mfg-info-item {
+    align-items: flex-start !important;
+  }
+
+  html.mfg-on #content .entry-header .mfg-info-item dd {
+    max-width: 62%;
+  }
+
+  html.mfg-on #content .mfg-tabs {
+    position: sticky;
+    top: .5rem;
+    width: 100%;
+    margin: 0 0 1.25rem;
+  }
+
+  html.mfg-on #page #content .mfg-tab {
+    flex: 0 0 auto;
+    padding-inline: .875rem;
+    font-size: .8125rem;
+  }
+
+  html.mfg-on #content .mfg-source-header {
+    align-items: stretch;
+  }
+
+  html.mfg-on #content .mfg-source-seg {
+    width: 100%;
+  }
+
+  html.mfg-on #page #content .mfg-seg-btn {
+    flex: 1;
+    min-width: 0;
+    padding-inline: .5rem;
+  }
+
+  html.mfg-on #colophon .mfg-footer-shell {
+    padding: 2.5rem 0 1.5rem;
+  }
+
+  html.mfg-on #colophon .mfg-footer-popular {
+    padding-bottom: 2rem;
+  }
+
+  html.mfg-on #colophon .mfg-footer-heading {
+    display: grid;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  html.mfg-on #colophon .mfg-footer-description {
+    max-width: 34ch;
+  }
+
+  html.mfg-on #colophon .mfg-footer-chart-link {
+    width: fit-content;
+  }
+
+  html.mfg-on #colophon .mfg-footer-grid {
+    grid-template-columns: repeat(10, minmax(7rem, 1fr));
+    gap: .625rem;
+  }
+
+  html.mfg-on #colophon .mfg-footer-card > a {
+    grid-template-rows: auto 6rem;
+  }
+
+  html.mfg-on #colophon .mfg-footer-card-copy {
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    gap: .375rem;
+    padding: .75rem;
+  }
+
+  html.mfg-on #colophon .mfg-footer-card-title {
+    font-size: .75rem;
+  }
+
+  html.mfg-on #colophon .mfg-footer-utility {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem 1rem;
+  }
+
+  html.mfg-on #colophon .mfg-footer-brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 24em) {
+  html.mfg-on #content .mfg-hero-main {
+    grid-template-columns: 4.75rem minmax(0, 1fr) !important;
+  }
+
+  html.mfg-on #content .mfg-hero-main > .mfg-detail-art {
+    width: 4.75rem;
+  }
+}
+
+/* One card anatomy everywhere: artwork first, title second. Full metadata lives
+   on the repack detail page, where it can be read without crowding browse views. */
+html.mfg-on {
+  --mfg-game-card-title-height: 4.5rem;
+  --mfg-footer-card-title-height: 3.75rem;
+}
+
+html.mfg-on #page .mfg-game-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+html.mfg-on #page .mfg-game-card :is(.mfg-cover, .mfg-popular-art, .mfg-upcoming-poster-box),
+html.mfg-on #colophon .mfg-game-card img {
+  aspect-ratio: 3 / 4;
+}
+
+/* Original artwork is deliberately unlabeled. Third-party provenance stays
+   hidden until the artwork is hovered or receives keyboard focus. */
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-upcoming-poster-box) > .mfg-cover-badge {
+  opacity: 0 !important;
+  transform: translateY(-.25rem) !important;
+  text-transform: none !important;
+  transition: opacity var(--mfg-speed), transform var(--mfg-speed) !important;
+}
+
+html.mfg-on :is(.mfg-cover, .mfg-detail-art, .mfg-upcoming-poster-box):is(:hover, :focus-within) > .mfg-cover-badge {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Latest, archive, category and search cards. Original nodes remain in the DOM
+   for exact theme restoration; only artwork and the native title are presented. */
+html.mfg-on #page #content .mfg-game-card.mfg-game {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto var(--mfg-game-card-title-height);
+  align-content: start;
+}
+
+html.mfg-on #page #content .mfg-game-card.mfg-game > :is(.entry-content, .entry-summary, footer.entry-meta, .mfg-card-information, .mfg-card-release) {
+  display: none !important;
+}
+
+html.mfg-on #page #content .mfg-game-card.mfg-game > .mfg-cover {
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+}
+
+html.mfg-on #page #content .mfg-game-card.mfg-game > .entry-header {
+  display: block;
+  grid-column: 1;
+  grid-row: 2;
+  box-sizing: border-box;
+  height: var(--mfg-game-card-title-height);
+  min-height: var(--mfg-game-card-title-height);
+  padding: .875rem;
+  overflow: hidden;
+  border-top: 1px solid var(--geist-hairline);
+}
+
+html.mfg-on #page #content .mfg-game-card.mfg-game > .entry-header > .entry-meta {
+  display: none !important;
+}
+
+html.mfg-on #page #content .mfg-game-card.mfg-game .entry-title {
+  display: -webkit-box;
+  height: auto;
+  margin: 0;
+  overflow: hidden;
+  color: var(--geist-ink);
+  font-family: var(--mfg-heading);
+  font-size: .875rem;
+  font-weight: 650;
+  line-height: 1.5;
+  letter-spacing: -.02em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* A–Z directory cards use the same title track as every other browse card. */
+html.mfg-on #content.mfg-directory .mfg-directory-card.mfg-game-card {
+  grid-template-rows: auto var(--mfg-game-card-title-height);
+}
+
+html.mfg-on #content.mfg-directory .mfg-game-card .mfg-directory-title {
+  box-sizing: border-box;
+  height: var(--mfg-game-card-title-height);
+  padding: .875rem;
+  border-top: 1px solid var(--geist-hairline);
+  font-size: .875rem;
+  line-height: 1.5;
+}
+
+html.mfg-on #content.mfg-directory .mfg-game-card .mfg-directory-title a {
+  -webkit-line-clamp: 2;
+}
+
+/* Monthly/yearly popular collections keep ranking in their order, not as an
+   extra visual label on every card. */
+html.mfg-on #content.mfg-popular .mfg-game-card > a {
+  display: grid;
+  grid-template-rows: auto var(--mfg-game-card-title-height);
+}
+
+html.mfg-on #content.mfg-popular .mfg-game-card .mfg-popular-caption {
+  display: block;
+  box-sizing: border-box;
+  height: var(--mfg-game-card-title-height);
+  padding: .875rem;
+  overflow: hidden;
+  border-top: 1px solid var(--geist-hairline);
+  font-size: .875rem;
+  font-weight: 650;
+  line-height: 1.5;
+  letter-spacing: -.02em;
+}
+
+html.mfg-on #content.mfg-popular .mfg-game-card .mfg-popular-caption > span {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Upcoming uses a different destination, but the visual contract stays the
+   same: poster and title, without status badges or a second action row. */
+html.mfg-on #page .mfg-upcoming-page-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem);
+  gap: 2rem;
+  align-items: end;
+  margin: 0 0 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--geist-hairline);
+  border-radius: var(--geist-radius-lg);
+  background:
+    radial-gradient(circle at 92% 0, rgba(196, 145, 78, .12), transparent 40%),
+    var(--geist-canvas-elevated);
+}
+
+html.mfg-on #page .mfg-upcoming-eyebrow {
+  color: var(--geist-primary);
+  font-size: .6875rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+html.mfg-on #page .mfg-upcoming-page-copy h2 {
+  margin: .35rem 0 .4rem;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  letter-spacing: -.04em;
+}
+
+html.mfg-on #page .mfg-upcoming-page-copy p {
+  margin: 0;
+  color: var(--geist-body);
+  font-size: .875rem;
+}
+
+html.mfg-on #page .mfg-upcoming-page-tools {
+  display: grid;
+  gap: .5rem;
+}
+
+html.mfg-on #page .mfg-upcoming-page-status {
+  color: var(--geist-mute);
+  font-size: .75rem;
+  font-weight: 650;
+}
+
+html.mfg-on #page .mfg-upcoming-filter {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: .7rem .875rem;
+  border: 1px solid var(--geist-hairline-strong);
+  border-radius: var(--geist-radius-md);
+  background: var(--geist-canvas);
+  color: var(--geist-ink);
+  font: 500 .875rem/1.2 var(--mfg-font);
+}
+
+html.mfg-on #page .mfg-upcoming-filter:focus {
+  border-color: var(--geist-primary);
+  outline: 2px solid color-mix(in srgb, var(--geist-primary) 24%, transparent);
+  outline-offset: 1px;
+}
+
+html.mfg-on #page .mfg-upcoming-card-item.mfg-game-card .mfg-upcoming-poster-box {
+  aspect-ratio: 3 / 4 !important;
+}
+
+html.mfg-on #page .mfg-upcoming-card-item.mfg-game-card .mfg-upcoming-info {
+  box-sizing: border-box !important;
+  height: var(--mfg-game-card-title-height) !important;
+  min-height: var(--mfg-game-card-title-height) !important;
+  padding: .875rem !important;
+  border-top: 1px solid var(--geist-hairline) !important;
+}
+
+html.mfg-on #page .mfg-upcoming-card-item.mfg-game-card .mfg-upcoming-title {
+  min-height: 0 !important;
+  font-size: .875rem !important;
+  line-height: 1.5 !important;
+  letter-spacing: -.02em !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+html.mfg-on #page .mfg-upcoming-card-item.mfg-game-card :is(.mfg-upcoming-play-badge, .mfg-upcoming-badges, .mfg-upcoming-action-btn) {
+  display: none !important;
+}
+
+/* The footer popularity shelf follows the same card structure and proportions. */
+html.mfg-on #colophon .mfg-footer-card.mfg-game-card > a {
+  grid-template-rows: auto var(--mfg-footer-card-title-height);
+}
+
+html.mfg-on #colophon .mfg-footer-card.mfg-game-card .mfg-footer-card-copy {
+  display: block;
+  box-sizing: border-box;
+  height: var(--mfg-footer-card-title-height);
+  padding: .625rem;
+}
+
+html.mfg-on #colophon .mfg-footer-card.mfg-game-card .mfg-footer-card-title {
+  font-size: .6875rem;
+  line-height: 1.4;
+  -webkit-line-clamp: 2;
+}
+
+html.mfg-on #colophon .mfg-footer-card.mfg-game-card .mfg-rating-desc {
+  display: none !important;
+}
+
+html.mfg-on #colophon .mfg-footer-card.mfg-game-card > a {
+  position: relative;
+}
+
+html.mfg-on #colophon .mfg-footer-card.mfg-game-card .mfg-steam-rating {
+  position: absolute;
+  top: .375rem;
+  right: .375rem;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: .125rem;
+  padding: .15rem .3rem;
+  border: 1px solid rgba(102, 192, 244, .45);
+  border-radius: 3px;
+  background: rgba(16, 32, 24, .9);
+  color: #66c0f4;
+  font: 700 .5625rem/1 var(--mfg-font);
+  letter-spacing: .02em;
+  text-decoration: none;
+}
+
+html.mfg-on #colophon .mfg-footer-card.mfg-game-card .mfg-steam-rating.mfg-rating-positive .mfg-rating-percent {
+  color: #a4d007;
+}
+
+html.mfg-on #colophon .mfg-footer-card.mfg-game-card .mfg-steam-rating.mfg-rating-mixed {
+  border-color: rgba(229, 193, 88, .45);
+  background: rgba(36, 32, 16, .9);
+  color: #e5c158;
+}
+
+html.mfg-on #colophon .mfg-footer-card.mfg-game-card .mfg-steam-rating.mfg-rating-negative {
+  border-color: rgba(224, 108, 117, .45);
+  background: rgba(36, 16, 16, .9);
+  color: #e06c75;
+}
+
+@media (max-width: 44em) {
+  html.mfg-on {
+    --mfg-game-card-title-height: 4rem;
+    --mfg-footer-card-title-height: 3.5rem;
+  }
+
+  html.mfg-on #content.mfg-directory .mfg-game-card .mfg-directory-title,
+  html.mfg-on #content.mfg-popular .mfg-game-card .mfg-popular-caption,
+  html.mfg-on #colophon .mfg-footer-card.mfg-game-card .mfg-footer-card-copy,
+  html.mfg-on #page #content .mfg-game-card.mfg-game > .entry-header,
+  html.mfg-on #page .mfg-upcoming-card-item.mfg-game-card .mfg-upcoming-info {
+    padding: .75rem !important;
+  }
+
+  html.mfg-on #page #content .mfg-game-card.mfg-game .entry-title,
+  html.mfg-on #content.mfg-directory .mfg-game-card .mfg-directory-title,
+  html.mfg-on #content.mfg-popular .mfg-game-card .mfg-popular-caption {
+    font-size: .75rem;
+  }
+
+  html.mfg-on #page .mfg-upcoming-page-header {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+}

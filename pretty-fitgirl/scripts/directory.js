@@ -97,7 +97,7 @@
     for (const item of list.querySelectorAll(":scope > li")) {
       const link = item.querySelector(":scope > a[href]"); if (!link) continue;
       const originalClass = item.getAttribute("class");
-      item.classList.add("mfg-directory-card");
+      item.classList.add("mfg-directory-card", "mfg-game-card");
       const frame = MFGRepack.cover(null, link.href, link.textContent.trim(), "mfg-cover", false, false);
       const heading = document.createElement("h2"); heading.className = "mfg-directory-title";
       link.before(heading); heading.append(link); item.prepend(frame);

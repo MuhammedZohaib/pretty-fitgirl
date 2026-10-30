@@ -1,11 +1,11 @@
-/* Vercel Geist Design System - Dark Mode Experience & Refinements */
-html.mfg-on, html.mfg-on * { scrollbar-width: thin; scrollbar-color: #262626 #000000; }
+/* Navigation, disclosure panels, and interaction states */
+html.mfg-on, html.mfg-on * { scrollbar-width: thin; scrollbar-color: var(--mfg-border-strong) var(--mfg-bg); }
 html.mfg-on::-webkit-scrollbar, html.mfg-on ::-webkit-scrollbar { width: 8px; height: 8px; }
-html.mfg-on::-webkit-scrollbar-track, html.mfg-on ::-webkit-scrollbar-track { background: #000000; }
+html.mfg-on::-webkit-scrollbar-track, html.mfg-on ::-webkit-scrollbar-track { background: var(--mfg-bg); }
 html.mfg-on::-webkit-scrollbar-thumb, html.mfg-on ::-webkit-scrollbar-thumb { min-height: 2rem; background: #262626; border: 1px solid #000000; border-radius: var(--geist-radius-sm); }
 html.mfg-on::-webkit-scrollbar-thumb:hover, html.mfg-on ::-webkit-scrollbar-thumb:hover { background: #383838; }
-html.mfg-on::-webkit-scrollbar-corner, html.mfg-on ::-webkit-scrollbar-corner { background: #000000; }
-html.mfg-on ::selection { color: #ffffff; background: var(--geist-link); }
+html.mfg-on::-webkit-scrollbar-corner, html.mfg-on ::-webkit-scrollbar-corner { background: var(--mfg-bg); }
+html.mfg-on ::selection { color: var(--mfg-ink); background: var(--geist-link); }
 
 html.mfg-on #page a { color: var(--geist-link); text-decoration: none; }
 html.mfg-on #page a:hover { color: var(--geist-link-soft); }
@@ -43,12 +43,9 @@ html.mfg-on #page .mfg-more-links a:hover { color: var(--geist-ink); }
 /* Collections live in Browse; the header contains only brand, search, and the small-screen toggle. */
 html.mfg-on #page #primary-navigation { display: none; }
 html.mfg-on #masthead {
-  padding-inline: max(1.5rem, calc((100% - 120rem) / 2));
+  padding-inline: max(1.5rem, calc((100% - 100rem) / 2));
   background: var(--geist-canvas);
-  background-image:
-    radial-gradient(ellipse 50% 60% at 20% -20%, rgba(121, 40, 202, 0.14), transparent 70%),
-    radial-gradient(ellipse 45% 55% at 60% -25%, rgba(0, 112, 243, 0.15), transparent 70%),
-    radial-gradient(ellipse 35% 45% at 85% -20%, rgba(80, 227, 194, 0.08), transparent 70%);
+  background-image: none;
 }
 
 html.mfg-on #page #masthead .mfg-browse-toggle {
@@ -62,7 +59,7 @@ html.mfg-on #page #masthead .mfg-browse-toggle {
   background: var(--geist-canvas-elevated);
   color: var(--geist-ink);
   font: 500 .75rem/1.5 var(--mfg-font);
-  transition: all var(--mfg-speed);
+  transition: color var(--mfg-speed), background-color var(--mfg-speed), border-color var(--mfg-speed);
 }
 html.mfg-on #page #masthead .mfg-browse-toggle:hover {
   border-color: var(--geist-hairline-hover);
@@ -100,7 +97,7 @@ html.mfg-on #page .mfg-back-top {
   font: 500 .75rem/1.5 var(--mfg-font);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
   cursor: pointer;
-  transition: all var(--mfg-speed);
+  transition: color var(--mfg-speed), background-color var(--mfg-speed), border-color var(--mfg-speed);
 }
 html.mfg-on #page .mfg-back-top:hover {
   border-color: var(--geist-primary);
@@ -150,7 +147,7 @@ html.mfg-on #content .mfg-comments-action {
   background: var(--geist-hairline-soft);
   color: var(--geist-ink);
   font: 500 .75rem/1.5 var(--mfg-font);
-  transition: all var(--mfg-speed);
+  transition: color var(--mfg-speed), background-color var(--mfg-speed), border-color var(--mfg-speed);
 }
 html.mfg-on #content .mfg-comments-action::after { content: "+"; font-size: 1rem; }
 html.mfg-on #content .mfg-comments[open] .mfg-comments-action::after { content: "−"; }
@@ -196,7 +193,7 @@ html.mfg-on .mfg-comments-body iframe {
   width: 100% !important;
   max-width: 100%;
   min-height: 28rem;
-  background: #000000 !important;
+  background: var(--mfg-bg) !important;
   border: 1px solid var(--mfg-border);
   border-radius: var(--geist-radius-sm);
   color-scheme: dark;
@@ -221,7 +218,7 @@ html.mfg-on #content .mfg-digest-card .cat-links a { color: var(--geist-warning)
 html.mfg-on #content .mfg-digest-preview { padding: 0 1.25rem 1.25rem; }
 html.mfg-on #content .mfg-digest-count { margin: .5rem 0 .875rem; color: var(--geist-mute); font-size: .75rem; }
 html.mfg-on #content .mfg-digest-games { display: flex; flex-wrap: wrap; gap: .375rem; margin-bottom: 1rem; }
-html.mfg-on #page #content .mfg-digest-games a { padding: .375rem .625rem; border: 1px solid var(--mfg-border); border-radius: var(--geist-radius-sm); color: var(--geist-ink); background: var(--geist-hairline-soft); font-size: .75rem; line-height: 1.5; text-decoration: none; transition: all var(--mfg-speed); }
+html.mfg-on #page #content .mfg-digest-games a { padding: .375rem .625rem; border: 1px solid var(--mfg-border); border-radius: var(--geist-radius-sm); color: var(--geist-ink); background: var(--geist-hairline-soft); font-size: .75rem; line-height: 1.5; text-decoration: none; transition: color var(--mfg-speed), background-color var(--mfg-speed), border-color var(--mfg-speed); }
 html.mfg-on #page #content .mfg-digest-games a:hover { border-color: var(--geist-hairline-hover); color: var(--geist-link); }
 html.mfg-on #content .mfg-open-digest { display: inline-flex; padding-block: .375rem; color: var(--geist-link); font-size: .8125rem; font-weight: 500; text-decoration: none; }
 html.mfg-on #content .mfg-open-digest:hover { color: var(--geist-link-soft); }
@@ -263,32 +260,18 @@ html.mfg-on #content.mfg-digest-page :is(.su-spoiler-content, ol, ul, p) { min-w
    Upcoming Repacks: Modern Vertical Poster Cards
    ========================================================================== */
 
-/* The outer container in the original post */
+/* Keep the original post wrapper in normal document flow. The card collection
+   must scroll with the page, just like every other catalog grid. */
 html.mfg-on .mfg-upcoming-container {
   height: auto !important;
-  max-height: 780px !important;
-  overflow-y: auto !important;
-  background: var(--geist-canvas-elevated) !important;
-  border: 1px solid var(--mfg-border) !important;
-  border-radius: var(--geist-radius-lg) !important;
-  padding: 1.5rem !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
   margin: 1.25rem 0 !important;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
-  scrollbar-width: thin !important;
-  scrollbar-color: var(--geist-hairline-strong) transparent !important;
-}
-
-html.mfg-on .mfg-upcoming-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-html.mfg-on .mfg-upcoming-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-html.mfg-on .mfg-upcoming-container::-webkit-scrollbar-thumb {
-  background: var(--geist-hairline-strong);
-  border-radius: var(--geist-radius-pill);
+  box-shadow: none !important;
 }
 
 /* Card Grid */
@@ -313,7 +296,7 @@ html.mfg-on .mfg-upcoming-card-item {
 }
 
 html.mfg-on .mfg-upcoming-card-item:hover {
-  transform: translateY(-4px) !important;
+  transform: none !important;
   border-color: var(--geist-hairline-strong) !important;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5) !important;
 }
@@ -349,7 +332,7 @@ html.mfg-on .mfg-upcoming-poster-box > img.mfg-upcoming-poster-img {
 }
 
 html.mfg-on .mfg-upcoming-card-item:hover .mfg-upcoming-poster-box > img.mfg-upcoming-poster-img {
-  transform: scale(1.04) !important;
+  transform: none !important;
   filter: brightness(1.05) !important;
 }
 
@@ -381,7 +364,7 @@ html.mfg-on .mfg-upcoming-card-item:hover .mfg-upcoming-play-badge {
   background: rgba(0, 223, 162, 0.9) !important;
   color: #000000 !important;
   border-color: var(--geist-cyan) !important;
-  transform: scale(1.05) !important;
+  transform: none !important;
 }
 
 html.mfg-on .mfg-upcoming-play-badge .mfg-play-icon {
@@ -467,7 +450,7 @@ html.mfg-on .mfg-upcoming-action-btn {
   font-size: 0.75rem !important;
   font-weight: 600 !important;
   text-decoration: none !important;
-  transition: all var(--mfg-speed) ease !important;
+  transition: color var(--mfg-speed), background-color var(--mfg-speed), border-color var(--mfg-speed) ease !important;
   box-sizing: border-box !important;
 }
 
@@ -491,7 +474,17 @@ html.mfg-on .mfg-upcoming-action-btn:hover .mfg-arrow {
     grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)) !important;
     gap: 0.875rem !important;
   }
-  html.mfg-on .mfg-upcoming-container {
-    padding: 0.875rem !important;
-  }
+}
+
+/* Desktop chrome: readable navigation and a quieter secondary rail. */
+@media (min-width: 60.0625em) {
+  html.mfg-on { --mfg-header-height: 4.125rem; }
+  html.mfg-on #masthead { min-height: var(--mfg-header-height); grid-template-columns: minmax(0, 1fr) minmax(20rem, 28rem); }
+  html.mfg-on #page .mfg-browse-sidebar > h2 { display: none; }
+  html.mfg-on #page .mfg-browse-sidebar > nav a { font-size: .8125rem; min-height: 2.5rem; padding: .625rem .75rem; }
+  html.mfg-on #main > .mfg-promo-sidebar { padding-left: 1rem; border-left: 1px solid var(--mfg-border); }
+  html.mfg-on #page .mfg-promo-sidebar .mfg-side-panel > summary { color: var(--mfg-muted); font-weight: 400; }
+  html.mfg-on #page #masthead .search-field { height: 2.375rem; font-size: .875rem; }
+  html.mfg-on #page #masthead .search-submit { height: 2.375rem; }
+  html.mfg-on #page #content .mfg-game > .entry-header .entry-title { letter-spacing: -.015em; line-height: 1.5; }
 }

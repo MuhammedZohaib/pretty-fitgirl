@@ -8,7 +8,7 @@
  */
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const CACHE_PREFIX = 'artwork.v2:';
+const CACHE_PREFIX = 'artwork.v3:';
 const STEAM_SEARCH =
   'https://store.steampowered.com/api/storesearch/?cc=US&l=english&term=';
 const GOG_SEARCH =
@@ -53,7 +53,7 @@ async function fetchSteamRating(appid) {
 
 /** Normalised storage key: case/whitespace-insensitive so "Foo  Bar" and "foo bar" share one entry. */
 function cacheKey(title) {
-  return CACHE_PREFIX + title.toLowerCase().replace(/\s+/g, ' ').trim();
+  return CACHE_PREFIX + editionBase(norm(title));
 }
 
 /** Steam artwork URL builders. *Alt variants use a second CDN as a fallback if the first is blocked/slow. */
@@ -142,8 +142,10 @@ async function pruneExpired() {
   try {
     const all = await chrome.storage.local.get(null);
     const stale = Object.keys(all).filter(
-      (k) => (k.startsWith(CACHE_PREFIX) && !fresh(all[k])) || k.startsWith('steam:')
+      (k) => (k.startsWith(CACHE_PREFIX) && !fresh(all[k])) || k.startsWith('steam:') || k.startsWith('artwork.v2:')
     );
+    const metadata = Object.keys(all).filter(k => k.startsWith('mfg.metadata.v1.')).sort((a, b) => (all[b]?.time || 0) - (all[a]?.time || 0));
+    stale.push(...metadata.filter((k, index) => index >= 150 || Date.now() - (all[k]?.time || 0) >= 86400000));
     if (stale.length) await chrome.storage.local.remove(stale);
   } catch {
     // best-effort housekeeping only
@@ -153,105 +155,49 @@ async function pruneExpired() {
 chrome.runtime.onStartup.addListener(pruneExpired);
 chrome.runtime.onInstalled.addListener(pruneExpired);
 
-/** Lowercase, normalize ampersands, and strip punctuation so titles compare loosely. */
+/** Normalize spelling without discarding sequel or remaster identity. */
 function norm(s) {
-  return (s || '')
-    .toLowerCase()
-    .replace(/&/g, ' and ')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
+  const roman = { ii: '2', iii: '3', iv: '4', v: '5', vi: '6', vii: '7', viii: '8', ix: '9', x: '10', xi: '11', xii: '12', xiii: '13', xiv: '14', xv: '15', xvi: '16' };
+  return (s || '').replace(/[™®©]/g, '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/&/g, ' and ').replace(/[’']/g, '')
+    .replace(/[^\p{L}\p{N}+]+/gu, ' ').trim()
+    .split(' ').map(word => roman[word] || word).join(' ');
 }
-
 function editionBase(title) {
-  return title.replace(/ (?:ultimate|deluxe|definitive|collector s|special|enhanced|remastered|digital|standard|reloaded) edition$/, '').trim();
+  return title.replace(/ (?:(?:digital|super) )?(?:ultimate|deluxe|gold|premium|complete|reloaded|collectors|standard|supporter|game of the year|goty) edition$/, '').trim();
 }
-
-/** Choose the best store-search item for a title on Steam with strict accuracy. */
 function pickBestSteam(items, query) {
-  if (!items || !items.length) return null;
-  const want = norm(query);
-  if (!want) return null;
-
-  // 1. Exact match (case/punctuation-insensitive)
-  for (const it of items) {
-    if (!it || !it.id) continue;
-    if (norm(it.name) === want) return it;
-  }
-
-  // Detect unwanted soundtrack / DLC / expansion / demo / dedicated server when query didn't ask for it
-  const isJunk = (name) => {
-    const n = norm(name);
-    const junkWords = ['soundtrack', 'ost', 'dlc', 'expansion pack', 'demo', 'dedicated server', 'artbook', 'vr mode'];
-    for (const j of junkWords) {
-      if ((' ' + n + ' ').includes(' ' + j + ' ') && !(' ' + want + ' ').includes(' ' + j + ' ')) return true;
-    }
-    return false;
-  };
-
-  const nonJunk = items.filter((it) => it && it.id && !isJunk(it.name));
-  const pool = nonJunk;
-
-  // 2. Exact match on pool
-  for (const it of pool) {
-    if (norm(it.name) === want) return it;
-  }
-
-  // Numbers in the query must match numbers in the candidate
-  const extractNumbers = (s) => (s.match(/\b\d+\b/g) || []).sort();
-  const wantNums = extractNumbers(want);
-  const numbersMatch = (candName) => {
-    const candNums = extractNumbers(norm(candName));
-    return JSON.stringify(candNums) === JSON.stringify(wantNums);
-  };
-
-  // 3. Prefix/starts-with or editionBase match where numbers strictly match
-  for (const it of pool) {
-    const n = norm(it.name);
-    if (!numbersMatch(it.name)) continue;
-    if (n === want || editionBase(n) === editionBase(want)) return it;
-  }
-
-  // 4. Token overlap match where numbers strictly match
-  const qWords = want.split(' ').filter((w) => w.length > 1);
-  let best = null;
-  let bestScore = 0;
-
-  for (const it of pool) {
-    if (!numbersMatch(it.name)) continue;
-    const nWords = norm(it.name).split(' ').filter((w) => w.length > 1);
-    const nSet = new Set(nWords);
-    let matched = 0;
-    for (const w of qWords) {
-      if (nSet.has(w)) matched++;
-    }
-    const score = matched / Math.max(qWords.length, nWords.length);
-    if (score >= 0.85) {
-      if (score > bestScore) {
-        bestScore = score;
-        best = it;
-      }
+  const want = editionBase(norm(query));
+  if (!want || !Array.isArray(items)) return null;
+  const numbers = text => (text.match(/\b\d+\b/g) || []).sort().join(',');
+  const identity = text => (text.match(/\b(?:remastered|remaster|remake|definitive|enhanced|anniversary|special|vr)\b/g) || []).sort().join(',');
+  const junk = /\b(?:soundtrack|ost|dlc|demo|dedicated server|artbook|season pass|expansion pack|upgrade|playtest)\b/g;
+  const words = text => new Set(text.split(' ').filter(w => w && !['the', 'a', 'an', 'and'].includes(w)));
+  const candidates = [];
+  for (const item of items) {
+    if (!item?.id || !item.name) continue;
+    const name = editionBase(norm(item.name));
+    if (numbers(name) !== numbers(want) || identity(name) !== identity(want)) continue;
+    if ((name.match(junk) || []).some(term => !(' ' + want + ' ').includes(' ' + term + ' '))) continue;
+    if (name === want) candidates.push({ item, score: 1 });
+    else {
+      const a = words(want), b = words(name);
+      const matched = [...a].filter(w => b.has(w)).length;
+      const score = matched / Math.max(a.size, b.size, 1);
+      if (score >= .9) candidates.push({ item, score });
     }
   }
-
-  return best;
+  candidates.sort((a, b) => b.score - a.score);
+  if (!candidates.length) return null;
+  // Near-equal non-exact candidates are ambiguous; do not borrow another game's artwork.
+  if (candidates[0].score < 1 && candidates[1] && candidates[0].score - candidates[1].score < .08) return null;
+  return candidates[0].item;
 }
-
-/** Choose the best matching product on GOG. */
 function pickBestGog(products, title) {
-  const want = norm(title);
-  let match = products.find((p) => norm(p.title) === want);
-  if (!match) {
-    match = products.find(
-      (p) => want && norm(p.title) && editionBase(norm(p.title)) === editionBase(want)
-    );
-  }
-  return match || null;
+  const candidates = (products || []).map((product, index) => ({ id: index + 1, name: product.title, product }));
+  return pickBestSteam(candidates, title)?.product || null;
 }
 
-/**
- * Search Steam for a title. Returns artwork URLs, null if no match, and THROWS on
- * network / HTTP errors so callers can avoid caching a transient failure as a miss.
- */
 async function steamLookup(title) {
   try {
     const data = await fetchJson(STEAM_SEARCH + encodeURIComponent(title));
@@ -259,14 +205,9 @@ async function steamLookup(title) {
     let best = pickBestSteam(items, title);
 
     if (!best || !best.id) {
-      // If Edition or subtitle caused a 0 hit, try base game name before edition/subtitle
-      const base = title
-        .replace(
-          /[:–—-]\s*(?:Ultimate|Deluxe|Definitive|Collector|Special|Enhanced|Remastered|Digital|Standard)?\s*Edition.*$/i,
-          ''
-        )
-        .trim();
-      if (base && base !== title) {
+      // Retry normalized spelling/package names; retain meaningful subtitles and remaster identity.
+      const base = editionBase(norm(title));
+      if (base && base !== title.toLowerCase().replace(/\s+/g, ' ').trim()) {
         const baseData = await fetchJson(STEAM_SEARCH + encodeURIComponent(base));
         const baseItems = Array.isArray(baseData.items) ? baseData.items : [];
         best = pickBestSteam(baseItems, base);
@@ -371,7 +312,7 @@ function resolveFromNetwork(key, title) {
 }
 
 async function resolveAll(titles) {
-  const unique = [...new Set(titles.filter(t => typeof t === 'string' && t.trim() && t.length <= 300))].slice(0, 60);
+  const unique = [...new Set(titles.filter(t => typeof t === 'string' && t.trim() && t.length <= 300))];
   const hits = await cacheGetMany(unique.map(cacheKey));
   const out = Object.create(null);
   await Promise.all(unique.map(async title => {

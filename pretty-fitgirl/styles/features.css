@@ -41,7 +41,7 @@ html.mfg-on #content .mfg-popular-caption { display: flex; gap: .625rem; padding
 html.mfg-on #content .mfg-rank { flex-shrink: 0; color: var(--geist-mute); font-family: var(--mfg-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
 html.mfg-on #content .mfg-popular-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding-bottom: 1.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--mfg-border); }
 html.mfg-on #content .mfg-popular-tools nav { display: flex; gap: .375rem; }
-html.mfg-on #content .mfg-popular-tools nav a { padding: .375rem 1rem; color: var(--geist-body); font: 500 .8125rem/1.5 var(--mfg-font); text-decoration: none; border: 1px solid var(--mfg-border); border-radius: var(--geist-radius-pill-category); background: var(--geist-canvas-elevated); transition: all var(--mfg-speed); }
+html.mfg-on #content .mfg-popular-tools nav a { padding: .375rem 1rem; color: var(--geist-body); font: 500 .8125rem/1.5 var(--mfg-font); text-decoration: none; border: 1px solid var(--mfg-border); border-radius: var(--geist-radius-pill-category); background: var(--geist-canvas-elevated); transition: color var(--mfg-speed), background-color var(--mfg-speed), border-color var(--mfg-speed); }
 html.mfg-on #content .mfg-popular-tools nav a:hover { border-color: var(--geist-hairline-hover); color: var(--geist-ink); }
 html.mfg-on #content .mfg-popular-tools nav a[aria-current="page"] { color: var(--geist-on-primary); background: var(--geist-primary); border-color: var(--geist-primary); font-weight: 500; }
 html.mfg-on #content .mfg-popular-tools input { margin-left: auto; width: min(100%, 18rem); font-size: .8125rem; border: 1px solid var(--mfg-border); border-radius: var(--geist-radius-sm); background: var(--geist-canvas); color: var(--geist-ink); padding: .375rem .625rem; }
@@ -58,8 +58,6 @@ html.mfg-on #page [hidden] { display: none !important; }
   html.mfg-on #content .mfg-popular-tools input { width: 100%; margin: 0; }
   html.mfg-on #content .mfg-popular-caption { flex-direction: column; gap: .25rem; padding: .75rem; font-size: .75rem; }
   html.mfg-on #content .mfg-update-items { padding-inline: .5rem; }
-  html.mfg-on[data-mfg-view="list"] #content .mfg-card > footer.entry-meta { grid-row: 3; }
-  html.mfg-on[data-mfg-view="list"] #content .mfg-card > .mfg-post-content { grid-row: 4; }
 }
 
 /* Hide posts tagged Adult when the popup option is on. */

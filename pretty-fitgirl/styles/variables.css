@@ -1,30 +1,30 @@
 html.mfg-on {
   color-scheme: dark;
-  background-color: #000000;
+  background-color: #10100f;
 
-  /* Vercel Geist Design System (Dark Mode) */
-  --geist-canvas: #000000;
-  --geist-canvas-elevated: #0a0a0a;
-  --geist-hairline: #222222;
-  --geist-hairline-soft: #141414;
-  --geist-hairline-strong: #333333;
-  --geist-hairline-hover: #444444;
-  --geist-ink: #ededed;
-  --geist-on-primary: #000000;
-  --geist-primary: #ffffff;
-  --geist-body: #a1a1a1;
-  --geist-mute: #707070;
-  --geist-faint: #444444;
-  --geist-link: #0070f3;
-  --geist-link-deep: #0761d1;
-  --geist-link-soft: #3291ff;
+  /* Editorial graphite surfaces with one warm brass accent. */
+  --geist-canvas: #10100f;
+  --geist-canvas-elevated: #191918;
+  --geist-hairline: #30302c;
+  --geist-hairline-soft: #21211f;
+  --geist-hairline-strong: #48473f;
+  --geist-hairline-hover: #68665b;
+  --geist-ink: #f3f0e7;
+  --geist-on-primary: #1b150c;
+  --geist-primary: #e0b875;
+  --geist-body: #c7c1b5;
+  --geist-mute: #99938a;
+  --geist-faint: #746f67;
+  --geist-link: #e0b875;
+  --geist-link-deep: #c99e5d;
+  --geist-link-soft: #f1d29f;
   --geist-error: #ee0000;
   --geist-error-deep: #c50000;
   --geist-warning: #f5a623;
   --geist-warning-soft: #ffefcf;
   --geist-warning-deep: #ab570a;
   --geist-violet: #7928ca;
-  --geist-cyan: #50e3c2;
+  --geist-cyan: #e0b875;
   --geist-pink: #ff0080;
   --geist-magenta: #eb367f;
 
@@ -39,8 +39,8 @@ html.mfg-on {
   /* Radii */
   --geist-radius-none: 0px;
   --geist-radius-sm: 6px;
-  --geist-radius-md: 12px;
-  --geist-radius-lg: 16px;
+  --geist-radius-md: 8px;
+  --geist-radius-lg: 10px;
   --geist-radius-pill-category: 64px;
   --geist-radius-pill: 100px;
   --geist-radius-full: 9999px;
@@ -74,13 +74,13 @@ html.mfg-on {
   --mfg-border: var(--geist-hairline);
   --mfg-border-strong: var(--geist-hairline-strong);
   --mfg-radius: var(--geist-radius-md);
-  --mfg-soft-accent: rgba(0, 112, 243, 0.08);
-  --mfg-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --mfg-soft-accent: rgba(224, 184, 117, 0.10);
+  --mfg-shadow: none;
   --mfg-speed: 140ms;
 
   /* Fonts */
   --mfg-font: "MFG Inter", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --mfg-heading: "MFG Manrope", "Geist", "MFG Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --mfg-heading: "MFG Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --mfg-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Shell Layout */

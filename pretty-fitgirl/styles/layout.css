@@ -8,7 +8,7 @@ html.mfg-on #main {
   width: var(--mfg-shell-width);
   max-width: none;
   margin: auto;
-  padding: 2.5rem 0 4rem;
+  padding: 2rem 0 4rem;
 }
 html.mfg-on #main::before,
 html.mfg-on #main::after { content: none; }
@@ -23,7 +23,7 @@ html.mfg-on #secondary { grid-column: 2; grid-row: 2; float: none; width: auto; 
 html.mfg-on #primary-sidebar { padding: 0; }
 html.mfg-on #secondary .site-description { display: block; margin: 0 0 1.5rem; padding: 0 0 1.5rem; border-bottom: 1px solid var(--mfg-border); color: var(--geist-body); font: 400 .8125rem/1.8 var(--mfg-font); }
 
-/* Vercel Geist Hero Toolbar */
+/* Listing heading and view controls */
 html.mfg-on .mfg-toolbar {
   position: relative;
   display: flex;
@@ -38,40 +38,13 @@ html.mfg-on .mfg-toolbar {
 html.mfg-on #page .mfg-toolbar h2 {
   margin: 0;
   font-family: var(--mfg-heading);
-  font-size: clamp(1.75rem, 2.5vw, 2rem);
+  font-size: clamp(1.375rem, 2.5vw, 1.75rem);
   font-weight: 600;
-  letter-spacing: -1.28px;
+  letter-spacing: -.035em;
   line-height: 1.25;
   color: var(--geist-ink);
 }
 html.mfg-on .mfg-toolbar p { margin: .5rem 0 0; color: var(--geist-mute); font-size: .875rem; letter-spacing: 0; }
-html.mfg-on .mfg-view-controls {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: .25rem;
-  padding: .25rem;
-  border: 1px solid var(--mfg-border);
-  border-radius: var(--geist-radius-sm);
-  background: var(--geist-canvas-elevated);
-}
-html.mfg-on #page button.mfg-view-button {
-  display: inline-flex;
-  align-items: center;
-  gap: .375rem;
-  min-height: 2rem;
-  padding: .25rem .625rem;
-  border: 0;
-  border-radius: calc(var(--geist-radius-sm) - 2px);
-  background: transparent;
-  color: var(--geist-body);
-  font: 500 .75rem/1.5 var(--mfg-font);
-  cursor: pointer;
-  transition: all var(--mfg-speed);
-}
-html.mfg-on #page .mfg-view-button svg { width: .875rem; height: .875rem; fill: none; stroke: currentColor; stroke-width: 1.5; }
-html.mfg-on #page .mfg-view-button[aria-pressed="true"] { background: var(--geist-primary); color: var(--geist-on-primary); font-weight: 500; }
-html.mfg-on #page .mfg-view-button:hover:not([aria-pressed="true"]) { color: var(--geist-ink); background: var(--geist-hairline-soft); }
 
 /* Supporting content */
 html.mfg-on #page .widget { min-width: 0; margin: 0 0 1.5rem; padding: 0 0 1.5rem; border: 0; border-bottom: 1px solid var(--mfg-border); border-radius: 0; background: none; color: var(--geist-body); font-size: .8125rem; line-height: 1.75; overflow-wrap: anywhere; }
@@ -103,10 +76,10 @@ html.mfg-on #page .secondary-navigation .sub-menu { background: var(--geist-canv
 html.mfg-on #page .secondary-navigation li:is(:hover, :focus-within) > .sub-menu { left: auto; right: 100%; top: 0; width: 15rem; }
 
 html.mfg-on #content .page-header { grid-column: 1 / -1; margin: 0; padding: 0; border: 0; background: none; }
-html.mfg-on #content .page-title { margin: 0; font-family: var(--mfg-heading); font-size: 2rem; font-weight: 600; letter-spacing: -1.28px; text-transform: none; color: var(--geist-ink); }
+html.mfg-on #content .page-title { margin: 0; font-family: var(--mfg-heading); font-size: 2rem; font-weight: 600; letter-spacing: -.035em; text-transform: none; color: var(--geist-ink); }
 html.mfg-on #content :is(.paging-navigation, .post-navigation) { grid-column: 1 / -1; margin: .5rem 0 0; padding: 1.5rem 0 0; border: 0; border-top: 1px solid var(--mfg-border); background: none; }
 html.mfg-on #content .pagination { display: flex; flex-wrap: wrap; gap: .375rem; justify-content: flex-start; border: 0; padding: 0; }
-html.mfg-on #content .page-numbers { display: inline-flex; justify-content: center; align-items: center; min-width: 2.5rem; min-height: 2.5rem; padding: .5rem .875rem; border: 1px solid var(--mfg-border); border-radius: var(--geist-radius-sm); background: var(--geist-canvas-elevated); color: var(--geist-body); font-size: .8125rem; font-weight: 500; text-decoration: none; transition: all var(--mfg-speed); }
+html.mfg-on #content .page-numbers { display: inline-flex; justify-content: center; align-items: center; min-width: 2.5rem; min-height: 2.5rem; padding: .5rem .875rem; border: 1px solid var(--mfg-border); border-radius: var(--geist-radius-sm); background: var(--geist-canvas-elevated); color: var(--geist-body); font-size: .8125rem; font-weight: 500; text-decoration: none; transition: color var(--mfg-speed), background-color var(--mfg-speed), border-color var(--mfg-speed); }
 html.mfg-on #content a.page-numbers:hover { border-color: var(--geist-hairline-hover); background: var(--geist-hairline-soft); color: var(--geist-ink); }
 html.mfg-on #content .page-numbers.current { background: var(--geist-primary); border-color: var(--geist-primary); color: var(--geist-on-primary); font-weight: 600; }
 html.mfg-on #content .page-numbers.dots { background: none; border-color: transparent; color: var(--geist-mute); }

@@ -34,13 +34,13 @@ Pretty FitGirl enhances the existing site in your browser: it adds browsing tool
 
 ### Browse and discover games
 
-- **Dark theme and responsive layouts** — Charcoal and muted sage styling, locally bundled Inter and Manrope fonts, cover-grid and list views, and comfortable or compact spacing.
-- **Game cover cards** — Aligned artwork, repack and original sizes, languages, tags, and a direct **View repack** link make listings easier to scan.
+- **Dark theme and responsive grid** — Charcoal and muted sage styling, locally bundled Inter and Manrope fonts, and comfortable or compact cover-grid spacing.
+- **Consistent game cards** — Every browse surface uses the same quiet artwork-and-title card. Full source titles remain available on hover and to screen readers; sizes, languages, tags, and download information stay on the repack detail page.
 - **Visual A–Z directory** — Turns the site's text list into cover cards while retaining its original links and pagination. Artwork loads near the viewport and is cached locally.
 - **Artwork fallback** — Looks up missing covers on Steam, with GOG as a fallback when needed. Source badges identify Original, Steam, or GOG artwork; unavailable covers retain a placeholder.
-- **Steam review badges** — Shows available Steam review summaries and positive-review percentages on game cards, with links to the corresponding Steam pages. Badge visibility can be toggled in the popup.
-- **Upcoming repack cards** — Converts upcoming-game lists into poster cards with version and delay badges when present, plus **Watch gameplay** links to YouTube search results. Offscreen and collapsed cards defer artwork loading.
-- **Popular collection filters** — Adds a title filter, rank labels, result counts, and shortcuts between monthly and yearly collections.
+- **Steam review badges** — Shows available Steam review summaries as a compact artwork overlay. Original artwork is unlabeled; Steam/GOG fallbacks disclose “Fetched from …” only on hover or keyboard focus. Ratings can be toggled in the popup.
+- **Upcoming repack cards** — Converts upcoming-game lists into the same artwork-and-title cards used elsewhere. Artwork links to a YouTube gameplay search and loads only near the viewport.
+- **Popular collection filters** — Adds a title filter, result counts, and shortcuts between monthly and yearly collections while preserving the same card anatomy.
 - **Optional adult-game filtering** — Hides posts tagged Adult. A–Z and popular collections use a locally cached index of the site's Adult archive; coverage depends on that index being available and up to date.
 
 ### Read game pages and updates
@@ -54,16 +54,17 @@ Pretty FitGirl enhances the existing site in your browser: it adds browsing tool
 
 ### Navigate and personalize
 
-- **Two supporting sidebars** — Keeps browsing shortcuts, archives, and collections on the left, with the site's support widgets and notices on the right.
+- **Focused navigation and footer** — Keeps browsing shortcuts, archives, and secondary site utilities in one collapsible rail, then turns the original live popularity widget into a ranked footer gallery with consistent Explore and Information links.
 - **Mobile navigation helpers** — Adds a collapsible **Browse** menu, a skip-to-content link, and a back-to-top button.
 - **Keyboard controls** — Supports arrow-key navigation between detail tabs, focus handling in image previews, and Escape to close previews or the mobile Browse menu.
+- **Complete next-page prefetch** — After a first listing page finishes loading, quietly warms page 2, all of its content images, and the artwork and Steam rating data for its games. Hovering, focusing, or touching pagination and navigation links does the same for those destinations, with request deduplication, a four-page tab limit, and automatic Data Saver/2G backoff.
 - **Instant theme toggle** — Restores the original page presentation when disabled. Preferences are saved locally and applied across open FitGirl tabs.
 
 ### Privacy and network use
 
 No analytics or telemetry is added. Preferences, artwork records, and the adult-filter index stay in local browser storage. Fonts are bundled with the extension.
 
-A background worker contacts Steam and GOG for artwork searches and Steam review summaries. These services receive search titles or app IDs and normal connection metadata; artwork loads from its source hosts. The optional adult filter requests the site's own archive and coordinates refreshes across tabs. Gameplay links open YouTube only when selected.
+A background worker contacts Steam and GOG for artwork searches and Steam review summaries. Optional navigation prefetching requests only same-origin destination documents, their content images, and artwork/rating lookups for games found there; it is disabled by Data Saver or a 2G connection and can be turned off in the popup. These services receive search titles or app IDs and normal connection metadata; artwork loads from its source hosts. The optional adult filter requests the site's own archive and coordinates refreshes across tabs. Gameplay links open YouTube only when selected.
 
 ---
 
@@ -107,10 +108,10 @@ Load the `pretty-fitgirl` directory directly as an unpacked extension in Chromiu
 Click the **Pretty FitGirl** icon in your browser toolbar to customize your experience:
 
 - **Theme Toggle** — Enable or disable the modern theme instantly without reloading.
-- **Layout** — Switch between **Cover grid** and **List view**.
 - **Density** — Choose between **Comfortable** and **Compact** card spacing.
-- **Steam Ratings** — Show or hide available Steam review badges on game cards.
+- **Steam Ratings** — Show or hide available Steam review badges on game artwork.
 - **Hide Adult Games** — Hide posts tagged Adult, including matching A–Z and popular entries when the archive index is available.
+- **Faster Navigation** — Enable or disable complete next-page and navigation-hover artwork/rating prefetching.
 
 Preferences are synced across tabs and saved locally in your browser.
 

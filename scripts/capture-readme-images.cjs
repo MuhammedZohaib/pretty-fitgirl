@@ -32,7 +32,7 @@ const js = manifest.content_scripts[0].js.map(file => fs.readFileSync(path.join(
 
     await page.route('**/*', route => {
       const request = route.request();
-      const bundled = new URL(request.url()).pathname.match(/^\/__mfg\/(assets\/(?:logo\.png|fonts\/[a-z-]+\.woff2))$/);
+      const bundled = new URL(request.url()).pathname.match(/^\/__mfg\/(assets\/(?:logo\.png|cover-unavailable\.png|fonts\/[a-z-]+\.woff2))$/);
       if (bundled) {
         return route.fulfill({
           contentType: bundled[1].endsWith('.woff2') ? 'font/woff2' : 'image/png',

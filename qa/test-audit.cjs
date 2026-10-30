@@ -76,12 +76,22 @@ async function browserTests() {
     const manifest = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8'));
     for (const file of manifest.content_scripts[0].css) await page.addStyleTag({ content: fs.readFileSync(path.join(ext, file), 'utf8') });
     for (const file of manifest.content_scripts[0].js) await page.addScriptTag({ content: fs.readFileSync(path.join(ext, file), 'utf8') });
+    assert.equal(await page.locator('.mfg-seg-btn[data-src=all]').getAttribute('aria-pressed'), 'true', 'All sources must be selected by default');
+    assert.equal(await page.locator('.mfg-seg-btn[data-src=direct]').getAttribute('aria-pressed'), 'false');
+    assert.equal(await page.locator('.mfg-direct-sources').getAttribute('hidden'), null, 'Direct sources should be initially visible');
+    assert.equal(await page.locator('.mfg-torrent-sources').getAttribute('hidden'), null, 'Torrent sources should be initially visible');
     const metadata = await page.evaluate(() => {
       const body = document.createElement('div');
       body.innerHTML = '<p>Original Size: 100 GB<br>Repack Size: 25 GB</p><ul><li>Based on release</li><li>HDD space after installation: 49.5 GB</li><li>Installation takes: 1.5 hours</li><li>At least 4 GB RAM</li></ul>';
       return MFGRepack.metadata(body).values;
     });
     assert.equal(metadata.disk, '49.5 GB'); assert.equal(metadata.installTime, '1.5 hours');
+    const metadataWithoutColon = await page.evaluate(() => {
+      const body = document.createElement('div');
+      body.innerHTML = '<p>Original Size: 100 GB<br>Repack Size: 25 GB</p><ul><li>Based on release</li><li>Installation takes 3-14 minutes (depending on your system)</li><li>HDD space after installation: 49.5 GB</li><li>At least 4 GB RAM</li></ul>';
+      return MFGRepack.metadata(body).values;
+    });
+    assert.equal(metadataWithoutColon.disk, '49.5 GB'); assert.equal(metadataWithoutColon.installTime, '3-14 minutes');
     await page.locator('#mfg-tab-dl').focus();
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('[role=tab][aria-selected=true]').getAttribute('id'), 'mfg-tab-ft');
@@ -94,6 +104,11 @@ async function browserTests() {
     await page.evaluate(() => { location.hash = ''; history.replaceState(null, '', '#mfg-panel-sc'); window.setPrefs({ enabled: false }); window.setPrefs({ enabled: true }); });
     assert.equal(await page.locator('#mfg-panel-sc').getAttribute('hidden'), null, 'Initial hash must reveal its tab');
     await page.locator('#mfg-tab-sc').click();
+    const screenshotGrid = page.locator('#mfg-panel-sc p:has(img, video)').first();
+    assert.equal(await screenshotGrid.evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length), 2, 'Screenshot gallery should use two desktop columns');
+    await page.setViewportSize({ width: 600, height: 720 });
+    assert.equal(await screenshotGrid.evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length), 1, 'Screenshot gallery should collapse to one narrow-screen column');
+    await page.setViewportSize({ width: 1280, height: 720 });
     const trigger = page.locator('#mfg-panel-sc a:has(img)').first();
     await trigger.focus(); await trigger.click();
     assert.equal(await page.evaluate(() => document.activeElement.className), 'mfg-lightbox-close');

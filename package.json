@@ -1,12 +1,12 @@
 {
   "name": "pretty-fitgirl",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "An unofficial, minimal dark theme and user experience enhancement browser extension for FitGirl Repacks.",
   "license": "MIT",
   "type": "commonjs",
   "scripts": {
     "check": "node qa/verify.cjs",
-    "test": "node qa/test-audit.cjs && node qa/run.cjs && node qa/test-steam-upcoming.cjs && node qa/test-lightbox-and-comments.cjs",
+    "test": "node qa/test-artwork-matching.cjs && node qa/test-prefetch.cjs && node qa/test-audit.cjs && node qa/run.cjs && node qa/test-steam-upcoming.cjs && node qa/test-lightbox-and-comments.cjs",
     "test:smoke": "node qa/extension-smoke.cjs",
     "pack": "node scripts/pack.cjs",
     "build": "node scripts/pack.cjs",

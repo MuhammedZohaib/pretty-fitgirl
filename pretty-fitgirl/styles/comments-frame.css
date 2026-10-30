@@ -1,7 +1,7 @@
-/* Vercel Geist Design System - Dark Mode Comments Frame (Tolstoy Comments) */
+/* Charcoal and sage comments frame (Tolstoy Comments) */
 html.mfg-comments-on {
   color-scheme: dark;
-  background: #000000;
+  background: #10100f;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   height: auto !important;
@@ -20,8 +20,8 @@ html.mfg-comments-on #app,
 html.mfg-comments-on .s-bg-Background,
 html.mfg-comments-on .app-toplayout_container,
 html.mfg-comments-on .grid {
-  background: #000000 !important;
-  color: #ededed !important;
+  background: #10100f !important;
+  color: #f3f0e7 !important;
   font-family: "Geist", "MFG Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
@@ -38,27 +38,27 @@ html.mfg-comments-on :is(input, select, textarea, button, .textarea) {
 
 /* Header & Title */
 html.mfg-comments-on .app-header {
-  background: #000000 !important;
-  border-bottom: 1px solid #222222 !important;
+  background: #10100f !important;
+  border-bottom: 1px solid #30302c !important;
 }
 html.mfg-comments-on .app-header .title-text {
   font-family: "Geist", "MFG Manrope", sans-serif !important;
   font-weight: 600 !important;
   font-size: 0.9375rem !important;
   letter-spacing: -0.4px !important;
-  color: #ededed !important;
+  color: #f3f0e7 !important;
 }
 html.mfg-comments-on .app-header .buttons .button {
-  background: #0a0a0a !important;
-  border: 1px solid #222222 !important;
+  background: #191918 !important;
+  border: 1px solid #30302c !important;
   border-radius: 6px !important;
-  color: #a1a1a1 !important;
+  color: #c7c1b5 !important;
   transition: all 140ms !important;
 }
 html.mfg-comments-on .app-header .buttons .button:hover {
-  background: #141414 !important;
-  border-color: #333333 !important;
-  color: #ededed !important;
+  background: #21211f !important;
+  border-color: #48473f !important;
+  color: #f3f0e7 !important;
 }
 /* The containing Comments disclosure provides the close control for this embedded mode */
 html.mfg-comments-on .app-header > .buttons:last-child:has(svg[data-key="times"]) {
@@ -67,60 +67,60 @@ html.mfg-comments-on .app-header > .buttons:last-child:has(svg[data-key="times"]
 
 /* High contrast text */
 html.mfg-comments-on :is(.s-color-Black, .s-color-BlackDark, .app-comment__name) {
-  color: #ededed !important;
+  color: #f3f0e7 !important;
   font-weight: 600 !important;
   letter-spacing: -0.2px !important;
 }
 
 /* Body copy */
 html.mfg-comments-on :is(.s-color-BlackMiddle, .app-comment__text, p) {
-  color: #a1a1a1 !important;
+  color: #c7c1b5 !important;
   font-size: 0.875rem !important;
   line-height: 1.6 !important;
 }
 
 /* Metadata & Muted text */
 html.mfg-comments-on :is(.s-color-BlackLight, .app-comment__date, .app-comments-empty, .app-comments-closed) {
-  color: #707070 !important;
+  color: #99938a !important;
   font-size: 0.75rem !important;
 }
 
 /* Links & Brand Accents */
 html.mfg-comments-on [class*="s-color-Main"],
 html.mfg-comments-on :is(a, .a) {
-  color: #0070f3 !important;
+  color: #e0b875 !important;
   text-decoration: none !important;
   transition: color 140ms !important;
 }
 html.mfg-comments-on :is(a:hover, .a:hover) {
-  color: #3291ff !important;
+  color: #f1d29f !important;
   text-decoration: underline !important;
   box-shadow: none !important;
 }
 
 /* Background layers & Hairline dividers */
 html.mfg-comments-on :is(.s-bg-BlackLight, .s-bg-BlackLight-before::before, .app-chat-line-top, .border) {
-  background: #222222 !important;
+  background: #30302c !important;
 }
 html.mfg-comments-on .s-bg-BlackMiddle {
-  background: #333333 !important;
+  background: #48473f !important;
 }
 html.mfg-comments-on .s-bg-BlackDark {
-  background: #444444 !important;
+  background: #68665b !important;
 }
 html.mfg-comments-on [class*="s-border-Black"],
 html.mfg-comments-on .s-border-Background,
 html.mfg-comments-on .app-border {
-  border-color: #222222 !important;
+  border-color: #30302c !important;
 }
 html.mfg-comments-on .s-bg-Background-before::before {
-  background: #000000 !important;
+  background: #10100f !important;
 }
 
 /* Brand colored elements */
 html.mfg-comments-on :is(.s-bg-Main, .s-bg-MainDark, .s-bg-MainMiddleDark) {
-  background: #0070f3 !important;
-  color: #ffffff !important;
+  background: #e0b875 !important;
+  color: #1b150c !important;
   border-radius: 6px !important;
 }
 html.mfg-comments-on :is(.s-bg-MainLight, .s-bg-MainMiddle, .s-bg-MainLight-before::before) {
@@ -133,22 +133,22 @@ html.mfg-comments-on .s-bg-Main .s-color-Background {
 
 /* Comment Cards / Bubbles */
 html.mfg-comments-on :is(.app-comment__cloud, .app-comment__richpreview, .app-post__form) {
-  background: #0a0a0a !important;
-  border: 1px solid #222222 !important;
+  background: #191918 !important;
+  border: 1px solid #30302c !important;
   border-radius: 12px !important;
   padding: 12px 16px !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
   transition: border-color 140ms !important;
 }
 html.mfg-comments-on .app-comment__cloud:hover {
-  border-color: #333333 !important;
+  border-color: #48473f !important;
 }
 
 /* Form inputs & textareas */
 html.mfg-comments-on :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea, .textarea, .app-post__input) {
-  background: #0a0a0a !important;
-  color: #ededed !important;
-  border: 1px solid #222222 !important;
+  background: #191918 !important;
+  color: #f3f0e7 !important;
+  border: 1px solid #30302c !important;
   border-radius: 6px !important;
   padding: 8px 12px !important;
   font-size: 0.875rem !important;
@@ -156,14 +156,14 @@ html.mfg-comments-on :is(input:not([type="checkbox"]):not([type="radio"]), selec
 }
 html.mfg-comments-on :is(input, textarea, .textarea)::placeholder,
 html.mfg-comments-on .textarea:placeholder {
-  color: #707070 !important;
+  color: #99938a !important;
   opacity: 1 !important;
 }
 html.mfg-comments-on :focus-visible,
 html.mfg-comments-on :is(input, textarea, .textarea):focus {
-  outline: 2px solid #0070f3 !important;
+  outline: 2px solid #e0b875 !important;
   outline-offset: 2px !important;
-  border-color: #0070f3 !important;
+  border-color: #e0b875 !important;
 }
 
 /* Buttons */
@@ -176,7 +176,7 @@ html.mfg-comments-on button:not(.close) {
   min-height: 2rem !important;
   padding: 0 14px !important;
   background: #ffffff !important;
-  color: #000000 !important;
+  color: #10100f !important;
   font-weight: 500 !important;
   font-size: 0.8125rem !important;
   border: 1px solid transparent !important;
@@ -193,9 +193,9 @@ html.mfg-comments-on button:not(.close):hover {
 /* Blockquote */
 html.mfg-comments-on blockquote {
   background: #0e0e0e !important;
-  border-left: 2px solid #0070f3 !important;
+  border-left: 2px solid #e0b875 !important;
   border-radius: 0 6px 6px 0 !important;
-  color: #a1a1a1 !important;
+  color: #c7c1b5 !important;
   padding: 8px 12px !important;
   margin: 8px 0 !important;
 }
@@ -212,29 +212,29 @@ html.mfg-comments-on :is(.s-bg-Alert, .app-alert__block) {
 
 /* Selection */
 html.mfg-comments-on ::selection {
-  background: #0070f3 !important;
-  color: #ffffff !important;
+  background: #e0b875 !important;
+  color: #1b150c !important;
 }
 
 /* Scrollbars */
 html.mfg-comments-on, html.mfg-comments-on * {
   scrollbar-width: thin;
-  scrollbar-color: #262626 #000000 !important;
+  scrollbar-color: #30302c #10100f !important;
 }
 html.mfg-comments-on ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 html.mfg-comments-on ::-webkit-scrollbar-track {
-  background: #000000 !important;
+  background: #10100f !important;
 }
 html.mfg-comments-on ::-webkit-scrollbar-thumb {
-  background: #262626 !important;
-  border: 1px solid #000000 !important;
+  background: #30302c !important;
+  border: 1px solid #10100f !important;
   border-radius: 6px !important;
 }
 html.mfg-comments-on ::-webkit-scrollbar-thumb:hover {
-  background: #383838 !important;
+  background: #48473f !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -269,7 +269,7 @@ html.mfg-comments-on ::-webkit-scrollbar-thumb:hover {
   max-height: 90vh;
   object-fit: contain;
   border-radius: 8px;
-  border: 1px solid #333333;
+  border: 1px solid #48473f;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9);
   cursor: zoom-in;
   user-select: none;

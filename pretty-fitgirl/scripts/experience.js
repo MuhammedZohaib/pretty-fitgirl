@@ -16,10 +16,32 @@
       const skip = document.createElement("a"); skip.className = "mfg-skip-link"; skip.href = "#content"; skip.textContent = "Skip to content"; header.prepend(skip);
       changes.push(() => { document.removeEventListener("keydown", escape); document.documentElement.classList.remove("mfg-browse-open"); toggle.remove(); skip.remove(); });
     }
+    const search = header?.querySelector('.search-field');
+    if (search) {
+      const previousPlaceholder = search.getAttribute('placeholder');
+      const previousShortcut = search.getAttribute('aria-keyshortcuts');
+      search.placeholder = 'Search repacks…  /';
+      search.setAttribute('aria-keyshortcuts', '/');
+      const focusSearch = event => {
+        if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey || event.isComposing || event.defaultPrevented) return;
+        if (event.target.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return;
+        event.preventDefault(); search.focus();
+      };
+      document.addEventListener('keydown', focusSearch);
+      changes.push(() => {
+        document.removeEventListener('keydown', focusSearch);
+        previousPlaceholder === null ? search.removeAttribute('placeholder') : search.setAttribute('placeholder', previousPlaceholder);
+        previousShortcut === null ? search.removeAttribute('aria-keyshortcuts') : search.setAttribute('aria-keyshortcuts', previousShortcut);
+      });
+    }
     const top = document.createElement("button"); top.type = "button"; top.className = "mfg-back-top"; top.textContent = "↑ Top"; top.hidden = true;
     top.setAttribute("aria-label", "Back to top");
     top.addEventListener("click", () => window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
-    const onScroll = () => { top.hidden = window.scrollY < 600; };
+    let topVisible = false;
+    const onScroll = () => {
+      const visible = window.scrollY >= 600;
+      if (visible !== topVisible) { topVisible = visible; top.hidden = !visible; }
+    };
     window.addEventListener("scroll", onScroll, { passive: true }); document.getElementById("page").append(top); onScroll();
     changes.push(() => { window.removeEventListener("scroll", onScroll); top.remove(); });
     comments(content, changes);
@@ -90,7 +112,7 @@
         const panel = document.createElement("details"); panel.className = "mfg-side-panel mfg-page-notices";
         const summary = document.createElement("summary"); summary.textContent = "Page notices";
         const body = document.createElement("div"); body.className = "mfg-side-content"; panel.append(summary, body);
-        document.querySelector(".mfg-promo-sidebar").append(panel); changes.push(() => panel.remove());
+        (document.querySelector(".mfg-promo-body") || document.querySelector(".mfg-promo-sidebar")).append(panel); changes.push(() => panel.remove());
         for (const node of extras) {
           const marker = document.createComment("mfg-page-notice-position"); node.before(marker); body.append(node);
           changes.push(() => marker.replaceWith(node));
@@ -146,8 +168,6 @@
     return true;
   }
 
-  // Safety cap: never build more than this many upcoming-game cards.
-  const MAX_UPCOMING_GAMES = 60;
   // Matches the "Upcoming repacks" heading used by the site.
   const UPCOMING_HEADING_RE = /upcoming\s+repacks/i;
   const ARROW_RE = /^[\s ]*[→↣⇢➔➜➤➡⮕➝➢]+\s*/;
@@ -179,7 +199,7 @@
           (s.textContent || '').trim().length > 1
       );
     }
-    return games.slice(0, MAX_UPCOMING_GAMES);
+    return games;
   }
 
   // Build a YouTube gameplay search link for a title.
@@ -191,7 +211,7 @@
     );
   }
 
-  // Create one poster card (title, badges, "Watch gameplay" button) for an upcoming game.
+  // Create the same artwork-and-title card used throughout the rest of the site.
   function decorateUpcomingCard(span, display, image) {
     if (span.dataset.fgyt) return null;
     span.dataset.fgyt = '1';
@@ -199,12 +219,8 @@
     const query = MFGRepack.searchName(display);
     const ytUrl = youtubeUrl(query + ' game');
 
-    const versionMatch = display.match(/\b(v[0-9.]+|Build\s+[0-9]+)\b/i);
-    const version = versionMatch ? versionMatch[0] : null;
-    const isDelayed = /delayed/i.test(display);
-
     const card = document.createElement('article');
-    card.className = 'mfg-upcoming-card-item';
+    card.className = 'mfg-upcoming-card-item mfg-game-card';
 
     // Vertical Poster Frame (aspect ratio 2/3)
     const posterLink = document.createElement('a');
@@ -249,17 +265,6 @@
       posterBox.prepend(img);
     }
 
-    const playBadge = document.createElement('div');
-    playBadge.className = 'mfg-upcoming-play-badge';
-    playBadge.setAttribute('aria-hidden', 'true');
-    const playIcon = document.createElement('span');
-    playIcon.className = 'mfg-play-icon';
-    playIcon.textContent = '▶';
-    const playText = document.createElement('span');
-    playText.className = 'mfg-play-label';
-    playText.textContent = 'Gameplay';
-    playBadge.append(playIcon, playText);
-    posterBox.append(playBadge);
     posterLink.append(posterBox);
 
     // Card Details & Info
@@ -271,43 +276,6 @@
     titleEl.title = display;
     titleEl.append(span);
     info.append(titleEl);
-
-    const badges = document.createElement('div');
-    badges.className = 'mfg-upcoming-badges';
-
-    const upcomingBadge = document.createElement('span');
-    upcomingBadge.className = 'mfg-badge mfg-badge-upcoming';
-    upcomingBadge.textContent = 'Upcoming';
-    badges.append(upcomingBadge);
-
-    if (version) {
-      const verBadge = document.createElement('span');
-      verBadge.className = 'mfg-badge mfg-badge-version';
-      verBadge.textContent = version;
-      badges.append(verBadge);
-    }
-
-    if (isDelayed) {
-      const delayBadge = document.createElement('span');
-      delayBadge.className = 'mfg-badge mfg-badge-delayed';
-      delayBadge.textContent = 'Delayed';
-      badges.append(delayBadge);
-    }
-    info.append(badges);
-
-    const actionBtn = document.createElement('a');
-    actionBtn.className = 'mfg-upcoming-action-btn';
-    actionBtn.href = ytUrl;
-    actionBtn.target = '_blank';
-    actionBtn.rel = 'noopener noreferrer';
-    const btnText = document.createElement('span');
-    btnText.textContent = 'Watch gameplay';
-    const btnArrow = document.createElement('span');
-    btnArrow.className = 'mfg-arrow';
-    btnArrow.setAttribute('aria-hidden', 'true');
-    btnArrow.textContent = '↗';
-    actionBtn.append(btnText, btnArrow);
-    info.append(actionBtn);
 
     card.append(posterLink, info);
     return card;
@@ -338,6 +306,40 @@
     firstSpan.parentNode.insertBefore(grid, firstSpan);
     changes.push(() => grid.remove());
 
+    const dedicated = /^\/upcoming-repacks(?:-\d+)?\/?$/i.test(location.pathname);
+    let pageStatus = null;
+    let pageField = null;
+    if (dedicated) {
+      const originalClass = article.getAttribute('class');
+      article.classList.add('mfg-upcoming-page');
+      const originalHeader = article.querySelector(':scope > .entry-header');
+      const originalHeaderHidden = originalHeader?.getAttribute('hidden');
+      if (originalHeader) originalHeader.hidden = true;
+      const header = document.createElement('section');
+      header.className = 'mfg-upcoming-page-header';
+      header.setAttribute('aria-labelledby', 'mfg-upcoming-page-title');
+      header.innerHTML = '<div class="mfg-upcoming-page-copy"><span class="mfg-upcoming-eyebrow">Release watchlist</span><h2 id="mfg-upcoming-page-title">Upcoming repacks</h2><p>Browse announced games and open any poster to find gameplay.</p></div>';
+      const tools = document.createElement('div');
+      tools.className = 'mfg-upcoming-page-tools';
+      pageStatus = document.createElement('span');
+      pageStatus.className = 'mfg-upcoming-page-status';
+      pageStatus.setAttribute('role', 'status');
+      pageStatus.setAttribute('aria-live', 'polite');
+      pageField = document.createElement('input');
+      pageField.className = 'mfg-upcoming-filter';
+      pageField.type = 'search';
+      pageField.placeholder = 'Filter upcoming games…';
+      pageField.setAttribute('aria-label', 'Filter upcoming games');
+      tools.append(pageStatus, pageField);
+      header.append(tools);
+      grid.before(header);
+      changes.push(() => {
+        header.remove();
+        if (originalHeader) originalHeaderHidden === null ? originalHeader.removeAttribute('hidden') : originalHeader.setAttribute('hidden', originalHeaderHidden);
+        originalClass === null ? article.removeAttribute('class') : article.setAttribute('class', originalClass);
+      });
+    }
+
     const brList = [];
     for (const span of spans) {
       let n = span.nextSibling;
@@ -362,6 +364,22 @@
         grid.append(card);
         cards.push({ item: it, card });
       }
+    }
+
+    if (pageField && pageStatus) {
+      const filter = () => {
+        const query = pageField.value.trim().toLocaleLowerCase();
+        let visible = 0;
+        for (const record of cards) {
+          const match = !query || record.item.display.toLocaleLowerCase().includes(query);
+          record.card.hidden = !match;
+          if (match) visible++;
+        }
+        pageStatus.textContent = query ? `${visible} of ${cards.length} games` : `${cards.length} games currently listed`;
+      };
+      pageField.addEventListener('input', filter);
+      filter();
+      changes.push(() => pageField.removeEventListener('input', filter));
     }
 
     changes.push(() => {

@@ -33,7 +33,7 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
       page.on('pageerror', error => errors.push(error.message));
       await page.route('**/*', route => {
         const request = route.request();
-        const bundled = new URL(request.url()).pathname.match(/^\/__mfg\/(assets\/(?:logo\.png|fonts\/[a-z-]+\.woff2))$/);
+        const bundled = new URL(request.url()).pathname.match(/^\/__mfg\/(assets\/(?:logo\.png|cover-unavailable\.png|fonts\/[a-z-]+\.woff2))$/);
         if (bundled) return route.fulfill({ contentType: bundled[1].endsWith('.woff2') ? 'font/woff2' : 'image/png', body: fs.readFileSync(path.join(extension, bundled[1])) });
         if (request.resourceType() === 'fetch') {
           const fixture = ({ '/blud/': 'az-blud', '/drive-rally/': 'az-drive' })[new URL(request.url()).pathname];
@@ -82,16 +82,28 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
       check(await page.locator('.mfg-game details.mfg-post-content').count() === 0, `${name}: game cards still expand inline`);
       const gameCards = page.locator('.mfg-game');
       check(await gameCards.count() === await page.locator('.mfg-game > .mfg-cover').count(), `${name}: game cover frame missing`);
-      check(await gameCards.count() === await page.locator('.mfg-game .mfg-repack-link').count(), `${name}: game card has no source-page action`);
-      if (name === 'home') {
-        check(await page.locator('.mfg-game').first().locator('.mfg-card-facts').innerText().then(text => text.includes('49.5 GB') && text.includes('140.3 GB')), 'Card sizes do not match original Cyberpunk metadata');
-      }
+      check(await gameCards.count() === await page.locator('.mfg-game.mfg-game-card').count(), `${name}: listing cards do not use the shared game-card contract`);
+      check(await page.locator('.mfg-game > :is(.mfg-card-information, .mfg-card-release)').count() === 0, `${name}: listing cards still generate secondary information`);
       if (name === 'detail') {
         check(await page.locator('.mfg-game-info').count() === 1, 'Game overview was not structured');
-        check((await page.locator('.mfg-game-info').innerText()).includes('REQUIRES Win10/11'), 'Author requirement was lost in the overview');
+        check((await page.locator('.mfg-detail-alert').innerText()).includes('REQUIRES Win10/11'), 'Author requirement was lost from the detail header');
+        check(!(await page.locator('.mfg-game-info').innerText()).includes('REQUIRES Win10/11'), 'Author requirement is repeated in the overview');
       }
       check(await page.locator('#content > .mfg-announcement').count() === 0, `${name}: announcement still interrupts game grid`);
-      check(await page.locator('.mfg-browse-sidebar').count() === 1 && await page.locator('.mfg-promo-sidebar').count() === 1, `${name}: two sidebars were not created`);
+      check(await page.locator('.mfg-browse-sidebar').count() === 1 && await page.locator('.mfg-promo-sidebar').count() === 1, `${name}: Browse navigation or secondary utilities were not created`);
+      check(await page.locator('.mfg-browse-sidebar > .mfg-promo-sidebar').count() === 1, `${name}: secondary site links are not inside Browse`);
+      check((await page.locator('.mfg-promo-sidebar > summary').innerText()).includes('Site resources'), `${name}: secondary resources label is unclear`);
+      check(await page.locator('.mfg-promo-sidebar:not([open])').count() === 1, `${name}: secondary site links should start collapsed`);
+      check(await page.locator('#colophon > .mfg-footer-shell').count() === 1, `${name}: custom footer was not created`);
+      check(await page.locator('.mfg-footer-grid > .mfg-footer-card').count() === 10, `${name}: footer popularity list is incomplete`);
+      const cardAnatomy = await page.locator('.mfg-game-card').evaluateAll(cards => cards.every(card => {
+        const artwork = card.querySelector(':scope > .mfg-cover, :scope > a > .mfg-popular-art, :scope > .mfg-upcoming-poster-link .mfg-upcoming-poster-box, :scope > a > img');
+        const title = card.querySelector('.entry-title, .mfg-directory-title, .mfg-popular-caption, .mfg-upcoming-title, .mfg-footer-card-title');
+        return Boolean(artwork && title && title.textContent.trim());
+      }));
+      check(cardAnatomy, `${name}: a game card is not artwork plus title`);
+      check(await page.locator('.mfg-game-card :is(.mfg-rank, .mfg-footer-rank, .mfg-upcoming-badges, .mfg-upcoming-action-btn, .mfg-upcoming-play-badge)').count() === 0, `${name}: a game card still generates visual metadata or a duplicate action`);
+      check(await page.locator('.mfg-footer-source[hidden]').count() === 1, `${name}: original footer source was not preserved`);
       check(await page.locator('.mfg-save, .mfg-library-nav, .mfg-detail-nav').count() === 0, `${name}: removed library or game navigation remains`);
       if (await page.locator('.mfg-comments').count()) {
         check(await page.locator('.mfg-comments:not([open])').count() === 1, `${name}: comments do not start collapsed`);
@@ -110,13 +122,15 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
         check(await page.locator('.mfg-directory-card').count() === 50, 'A-Z links did not become cards');
         check(await page.locator('.lcp_paginator a.lcp_nextlink').count() === 1, 'Original A-Z next-page link is missing');
       }
-      const widths = [390, 640, 960, 1280, 1440, 1600, 1920, 2560];
+      const widths = [360, 390, 640, 960, 1280, 1440, 1600, 1920, 2560];
       for (const width of widths) {
         await page.setViewportSize({ width, height: 1100 });
         const metrics = await page.evaluate(() => ({
           overflow: document.documentElement.scrollWidth - innerWidth,
           columns: getComputedStyle(document.querySelector('#content')).gridTemplateColumns,
           popularColumns: document.querySelector('#content.mfg-popular .widgets-grid-layout') ? getComputedStyle(document.querySelector('#content.mfg-popular .widgets-grid-layout')).gridTemplateColumns : '',
+          footerColumns: getComputedStyle(document.querySelector('.mfg-footer-grid')).gridTemplateColumns,
+          titleTrackHeight: Math.round((document.querySelector('#content > .mfg-game > .entry-header, #content .mfg-directory-title, #content .mfg-popular-caption, #content .mfg-upcoming-info')?.getBoundingClientRect().height || 0)),
           offenders: [...document.querySelectorAll('#page *')].filter(el => {
             const r = el.getBoundingClientRect(); const s = getComputedStyle(el);
             return r.width && r.right > innerWidth + 2 && s.position !== 'absolute' && s.position !== 'fixed';
@@ -131,11 +145,32 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
           check(await page.locator('.mfg-browse-sidebar').isVisible(), name + '@' + width + ': Browse toggle did not open');
           await page.keyboard.press('Escape');
           check(!(await page.locator('.mfg-browse-sidebar').isVisible()), name + '@' + width + ': Escape did not close Browse');
+        } else if (width === 1280) {
+          await page.locator('.mfg-promo-sidebar > summary').click();
+          check(await page.locator('.mfg-promo-body').isVisible(), name + '@' + width + ': Site resources disclosure did not open');
+          check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${name}@${width}: opened Site resources disclosure overflows`);
+          await page.locator('.mfg-promo-sidebar > summary').click();
         }
         report.cases.push({ page: name, width, articleCount, ...metrics });
         check(metrics.overflow <= 1, `${name}@${width}: ${metrics.overflow}px horizontal overflow: ${metrics.offenders.join(', ')}`);
-        if (name !== 'detail' && !popular && !directory && !updatesPage) check(metrics.columns.split(' ').length === (width >= 2200 ? 5 : width >= 1600 ? 4 : width <= 704 ? 2 : 3), `${name}@${width}: unexpected column count`);
+        if (name !== 'detail' && !popular && !directory && !updatesPage) check(metrics.columns.split(' ').length === (width >= 1792 ? 5 : width >= 1344 ? 4 : width <= 704 ? 2 : 3), `${name}@${width}: unexpected column count`);
         if (popular) check(metrics.popularColumns.split(' ').length === (width >= 2200 ? 6 : width >= 1600 ? 5 : width <= 704 ? 2 : 4), `${name}@${width}: unexpected popular column count`);
+        check(metrics.footerColumns.split(' ').length === 10, `${name}@${width}: popular footer is not a single ten-card row`);
+        const footerRows = await page.locator('.mfg-footer-card:not([data-mfg-adult-hidden])').evaluateAll(cards => new Set(cards.map(card => Math.round(card.getBoundingClientRect().top))).size);
+        check(footerRows === 1, `${name}@${width}: popular footer wraps into ${footerRows} rows`);
+        if (metrics.titleTrackHeight) check(metrics.titleTrackHeight >= 56 && metrics.titleTrackHeight <= 72, `${name}@${width}: title-only card row is ${metrics.titleTrackHeight}px`);
+        const footerSymmetry = await page.locator('.mfg-footer-card:not([data-mfg-adult-hidden])').evaluateAll(cards => {
+          const rows = new Map();
+          for (const card of cards) {
+            const rect = card.getBoundingClientRect();
+            const row = Math.round(rect.top);
+            const previous = rows.get(row);
+            if (previous && Math.abs(previous - rect.height) > 1) return false;
+            rows.set(row, rect.height);
+          }
+          return true;
+        });
+        check(footerSymmetry, `${name}@${width}: footer card heights are inconsistent`);
         if (popular || directory) {
           const uniform = await page.locator(directory ? '.mfg-directory-card' : '#content.mfg-popular .widget-grid-view-image').evaluateAll(cards => {
             const rows = new Map();
@@ -155,14 +190,20 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
             const rows = new Map();
             for (const card of cards) {
               const top = Math.round(card.getBoundingClientRect().top);
-              const values = [card, card.querySelector('.mfg-cover'), card.querySelector('.entry-header'), card.querySelector('.mfg-card-information'), card.querySelector('.mfg-repack-link')].map(node => { const r = node.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.height)]; });
+              const values = [card, card.querySelector('.mfg-cover'), card.querySelector('.entry-header')].map(node => { const r = node.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.height)]; });
               const previous = rows.get(top);
               if (previous && values.some((v, i) => v.some((n, j) => Math.abs(n - previous[i][j]) > 1))) return JSON.stringify({ title: card.querySelector('.entry-title').textContent.trim(), values, previous });
               rows.set(top, values);
             }
             return true;
           });
-          check(symmetry === true, `${name}@${width}: card covers/content/actions do not align: ${symmetry}`);
+          check(symmetry === true, `${name}@${width}: card artwork/title tracks do not align: ${symmetry}`);
+        }
+        if (name === 'home' && [390, 1600].includes(width)) {
+          const screenshotChrome = await page.addStyleTag({ content: '#masthead, .mfg-back-top { visibility: hidden !important; }' });
+          await page.locator('.mfg-footer-shell').screenshot({ path: path.join(output, `footer-${width}.png`) });
+          await screenshotChrome.evaluate(node => node.remove());
+          await page.evaluate(() => scrollTo(0, 0));
         }
         if ([390, 960, 1280, 1600, 2560].includes(width)) await page.screenshot({ path: path.join(output, `${name}-${width}.png`) });
         if (width <= 640 && name !== 'detail' && !popular && !directory && !updatesPage) {
@@ -176,18 +217,14 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
             }
           }
           await page.locator('.mfg-updates').evaluateAll(nodes => nodes.forEach(node => node.open = false));
-          await page.evaluate(() => window.changePreferences({ enabled: true, view: 'list', density: 'compact' }));
-          check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${name}@${width}: compact list overflows`);
-          await page.evaluate(() => window.changePreferences({ enabled: true, view: 'grid', density: 'comfortable' }));
+          await page.evaluate(() => window.changePreferences({ enabled: true, density: 'compact' }));
+          check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${name}@${width}: compact grid overflows`);
+          await page.evaluate(() => window.changePreferences({ enabled: true, density: 'comfortable' }));
         }
       }
       await page.setViewportSize({ width: 1280, height: 1100 });
       if (name !== 'detail' && !popular && !directory && !updatesPage) {
-        await page.locator('.mfg-view-button[data-view="list"]').click();
-        check(await page.evaluate(() => window.savedPreferences?.modernFitGirl.view === 'list'), `${name}: on-page layout switch did not save the preference`);
-        check(await page.locator('.mfg-view-button[data-view="list"]').getAttribute('aria-pressed') === 'true', `${name}: layout control has incorrect selected state`);
-        await page.screenshot({ path: path.join(output, `${name}-list.png`) });
-        await page.locator('.mfg-view-button[data-view="grid"]').click();
+        check(await page.locator('.mfg-view-controls, .mfg-view-button').count() === 0, `${name}: removed layout control remains`);
       }
       if (name === 'home') {
         const preview = page.locator('.mfg-cover').first();
@@ -198,7 +235,7 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
           check(await preview.locator('.mfg-cover-placeholder').isVisible(), 'Failed cover has no placeholder');
           check(Math.abs((await preview.boundingBox()).height - coverBox.height) < 1, 'Failed cover changed card geometry');
           await preview.screenshot({ path: path.join(output, 'cover-placeholder.png') });
-          check(await page.locator('.entry-title a').filter({ hasText: title }).count() === 1, 'missing cover removed the original post title');
+          check(await page.locator('.entry-title a').evaluateAll((links, fullTitle) => links.filter(a => a.getAttribute('aria-label') === fullTitle && a.title === fullTitle && a.textContent.trim()).length, title) === 1, 'missing cover removed the original post title');
           check(await page.locator('.mfg-cover').filter({ has: page.locator('img') }).count() > 0, 'missing cover affected unrelated cards');
         }
       }
@@ -229,8 +266,8 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
         check(await page.locator('.mfg-popular .widget-grid-view-image:visible').count() === allCards, `${name}: collection filter did not reset`);
       }
       await page.evaluate(() => window.changePreferences({ enabled: true, view: 'list', density: 'compact' }));
-      check(await page.locator('html').getAttribute('data-mfg-view') === 'list', `${name}: list preference failed`);
-      check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${name}: list overflows`);
+      check(await page.locator('html').getAttribute('data-mfg-view') === null, `${name}: legacy list preference was not ignored`);
+      check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${name}: compact grid overflows`);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       check(await page.evaluate(() => [...document.querySelectorAll('.mfg-card')].every(node => getComputedStyle(node).transitionDuration === '0s')), `${name}: reduced motion failed`);
       await page.evaluate(() => window.changePreferences({ enabled: false }));
@@ -314,10 +351,13 @@ const check = (condition, message) => { if (!condition) report.failures.push(mes
       window.chrome = { runtime: {}, storage: { local: { get: (_, cb) => cb({}), set: (value, cb) => { window.saved = value; cb(); } } } };
     });
     await popup.goto(`file:///${path.join(extension, 'popup.html').replaceAll('\\','/')}`);
-    await popup.locator('#view').selectOption('list');
-    check(await popup.evaluate(() => window.saved?.modernFitGirl.view === 'list'), 'popup did not persist list preference');
+    check(await popup.locator('#view').count() === 0, 'popup still exposes a layout preference');
+    await popup.locator('#density').selectOption('compact');
+    check(await popup.evaluate(() => window.saved?.modernFitGirl.density === 'compact' && !('view' in window.saved.modernFitGirl)), 'popup did not persist grid spacing without a layout preference');
+    await popup.locator('#prefetchPages').uncheck();
+    check(await popup.evaluate(() => window.saved?.modernFitGirl.prefetchPages === false), 'popup did not persist navigation prefetch preference');
     await popup.locator('#enabled').uncheck();
-    check(await popup.locator('#view').isDisabled(), 'popup did not disable presentation controls');
+    check(await popup.locator('#density').isDisabled(), 'popup did not disable presentation controls');
     await popup.close();
   } finally { await browser.close(); }
   fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify(report, null, 2));

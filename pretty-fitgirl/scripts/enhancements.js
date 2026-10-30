@@ -4,7 +4,7 @@
   if (location.hostname !== "fitgirl-repacks.site" || window.top !== window) return;
   const root = document.documentElement;
   // User preference defaults; the popup writes the same shape to chrome.storage.local under "modernFitGirl".
-  const defaults = { enabled: true, density: "comfortable", view: "grid", hideAdult: false, steamRatings: true };
+  const defaults = { enabled: true, density: "comfortable", hideAdult: false, steamRatings: true, prefetchPages: true };
   let preferences = { ...defaults };
   // `ready` = DOM parsed; `enhanced` = DOM rewrite applied; `changes` = undo stack used to restore the original page when disabled.
   let ready = false;
@@ -57,10 +57,11 @@
     const cards = [];
     for (const grid of grids) {
       const items = [...grid.querySelectorAll(":scope > .widget-grid-view-image")];
-      items.forEach((card, index) => {
+      items.forEach(card => {
         const link = card.querySelector("a[href]");
         const image = link?.querySelector("img");
         if (!link) return;
+        card.classList.add("mfg-game-card");
         const title = link.getAttribute("title") || image?.alt || link.textContent.trim();
         if (image) {
           const artwork = document.createElement("span"); artwork.className = "mfg-popular-art";
@@ -73,19 +74,15 @@
           const artwork = document.createElement("span"); artwork.className = "mfg-popular-art"; artwork.append(MFGRepack.placeholder()); link.prepend(artwork);
           changes.push(() => artwork.remove());
         }
-        const currentArt = card.querySelector(".mfg-popular-art");
-        if (currentArt) MFGRepack.attachSteamRating(currentArt, title);
+        MFGRepack.attachSteamRating(card.querySelector(".mfg-popular-art"), title);
         const caption = document.createElement("span");
         caption.className = "mfg-popular-caption";
-        const rank = document.createElement("span");
-        rank.className = "mfg-rank";
-        rank.textContent = String(index + 1).padStart(2, "0");
         const text = document.createElement("span");
         text.textContent = title;
-        caption.append(rank, text);
+        caption.append(text);
         link.append(caption);
         cards.push({ card, title });
-        changes.push(() => { caption.remove(); card.hidden = false; card.removeAttribute("hidden"); });
+        changes.push(() => { caption.remove(); card.classList.remove("mfg-game-card"); card.hidden = false; card.removeAttribute("hidden"); });
       });
     }
     const filter = () => {
@@ -100,20 +97,6 @@
     field.addEventListener("input", filter);
     filter();
     return true;
-  }
-
-  // Reflect the current view (grid/list) on the toolbar buttons.
-  function syncControls() {
-    for (const button of document.querySelectorAll(".mfg-view-button")) {
-      button.setAttribute("aria-pressed", String(button.dataset.view === preferences.view));
-    }
-  }
-
-  // Switch grid/list immediately and persist the choice.
-  function changeView(view) {
-    preferences = normalize({ ...preferences, view });
-    apply();
-    try { chrome.storage.local.set({ modernFitGirl: preferences }); } catch { /* Retain the local view if storage is unavailable. */ }
   }
 
   // Undo every DOM change (newest first) - used when the user turns the theme off.
@@ -143,6 +126,8 @@
     MFGNavigation.mount(changes);
     siteLogo();
     MFGExperience.mount(content, changes);
+    MFGFooter.mount(changes);
+    MFGPrefetch.mount(changes, () => preferences.enabled && preferences.prefetchPages !== false);
 
     if (MFGExperience.digest(content, changes)) return;
     if (MFGDirectory.mount(content, changes)) return;
@@ -176,26 +161,7 @@
       : `${gamePosts.length} repack${gamePosts.length === 1 ? "" : "s"} on this page`;
     if (!pageHeader) context.append(heading);
     context.append(count);
-    const controls = document.createElement("div");
-    controls.className = "mfg-view-controls";
-    controls.setAttribute("role", "group");
-    controls.setAttribute("aria-label", "Listing layout");
-    for (const view of ["grid", "list"]) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "mfg-view-button";
-      button.dataset.view = view;
-      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      icon.setAttribute("viewBox", "0 0 20 20");
-      icon.setAttribute("aria-hidden", "true");
-      const shape = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      shape.setAttribute("d", view === "grid" ? "M3 3h5v5H3zM12 3h5v5h-5zM3 12h5v5H3zM12 12h5v5h-5z" : "M3 4h3v3H3zM9 5.5h8M3 12h3v3H3zM9 13.5h8");
-      icon.append(shape);
-      button.append(icon, document.createTextNode(view === "grid" ? "Grid" : "List"));
-      button.addEventListener("click", () => changeView(view));
-      controls.append(button);
-    }
-    toolbar.append(context, controls);
+    toolbar.append(context);
     if (pageHeader) pageHeader.after(toolbar);
     else content.prepend(toolbar);
     changes.push(() => toolbar.remove());
@@ -232,25 +198,30 @@
       changes.push(() => article.classList.remove(className));
 
       // The observed cover is the small alignleft image inside the metadata paragraph.
-      // Search results have text excerpts only: never fetch another page to fill a card.
+      // Search excerpts are enriched lazily from their original repack pages.
       const image = body.querySelector("img.alignleft");
       if (game || document.body.matches(".search")) {
+        article.classList.add("mfg-game-card");
         const hasCover = Boolean(image?.getAttribute("src"));
         article.classList.add(hasCover ? "mfg-has-cover" : "mfg-no-cover");
         article.dataset.mfgCover = hasCover ? "available" : "unavailable";
         changes.push(() => {
-          article.classList.remove("mfg-has-cover", "mfg-no-cover");
+          article.classList.remove("mfg-game-card", "mfg-has-cover", "mfg-no-cover");
           delete article.dataset.mfgCover;
         });
         const originalTitle = titleLink.getAttribute("title"); titleLink.title = titleLink.textContent.trim();
         changes.push(() => originalTitle === null ? titleLink.removeAttribute("title") : titleLink.setAttribute("title", originalTitle));
-        const data = MFGRepack.metadata(body);
+        const rawTitle = titleLink.textContent.trim();
+        const originalLabel = titleLink.getAttribute('aria-label');
+        titleLink.setAttribute('aria-label', rawTitle);
+        changes.push(() => originalLabel === null ? titleLink.removeAttribute('aria-label') : titleLink.setAttribute('aria-label', originalLabel));
+        const titleNodes = [...titleLink.childNodes];
+        const cleanTitle = MFGRepack.searchName(rawTitle) || rawTitle;
+        titleLink.replaceChildren(document.createTextNode(cleanTitle));
+        changes.push(() => titleLink.replaceChildren(...titleNodes));
         article.classList.add("mfg-game");
         changes.push(() => article.classList.remove("mfg-game"));
-        const summary = MFGRepack.summary(article, data, titleLink.href);
-        article.append(summary);
-        changes.push(() => summary.remove());
-        const cover = MFGRepack.cover(image, titleLink.href, titleLink.textContent.trim());
+        const cover = MFGRepack.cover(image, titleLink.href, rawTitle);
         article.prepend(cover);
         changes.push(() => cover.remove());
       }
@@ -300,7 +271,6 @@
         anchor.before(card);
       }
     }
-    syncControls();
     revealHash();
   }
 
@@ -422,11 +392,10 @@
     root.classList.toggle("mfg-off", !preferences.enabled);
     if (preferences.enabled) {
       root.dataset.mfgDensity = preferences.density;
-      root.dataset.mfgView = preferences.view;
+      delete root.dataset.mfgView;
       root.dataset.mfgSteamRatings = preferences.steamRatings !== false ? "on" : "off";
       if (ready) enhance();
       if (ready) filterAdult();
-      syncControls();
     } else {
       delete root.dataset.mfgDensity;
       delete root.dataset.mfgView;
@@ -441,9 +410,9 @@
     return {
       enabled: typeof value?.enabled === "boolean" ? value.enabled : defaults.enabled,
       density: value?.density === "compact" ? "compact" : defaults.density,
-      view: value?.view === "list" ? "list" : defaults.view,
       hideAdult: value?.hideAdult === true,
-      steamRatings: value?.steamRatings !== false
+      steamRatings: value?.steamRatings !== false,
+      prefetchPages: value?.prefetchPages !== false
     };
   }
 

@@ -47,13 +47,3 @@
   html.mfg-on #content :is(.comments-area, .page-content, .nav-links) { padding: 1rem; }
   html.mfg-on #content :is(td, th) { padding: .5rem; }
 }
-html.mfg-on[data-mfg-view="list"] body:is(.home, .archive, .search) #content { grid-template-columns: minmax(0, 1fr); }
-html.mfg-on[data-mfg-view="list"] #content .mfg-announcement { grid-column: 1 / -1; }
-@media (max-width: 44em) {
-  html.mfg-on[data-mfg-view="list"] #content .mfg-card { grid-template-columns: 5rem minmax(0, 1fr); }
-  html.mfg-on[data-mfg-view="list"] #content .mfg-card .mfg-cover { width: 3.5rem; }
-  html.mfg-on[data-mfg-view="list"] #content .mfg-card > .entry-header { grid-column: 2; }
-  html.mfg-on[data-mfg-view="list"] #content .mfg-card > footer.entry-meta { grid-column: 1 / -1; grid-row: 2; padding: .75rem 1rem; border-left: 0; border-top: 1px solid var(--mfg-border); }
-  html.mfg-on[data-mfg-view="list"] #content .mfg-card > .mfg-post-content { grid-row: 3; }
-  html.mfg-on[data-mfg-view="list"] #content .mfg-card:not(:has(.mfg-cover)) > .entry-header { grid-column: 1 / -1; }
-}

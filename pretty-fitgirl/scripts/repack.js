@@ -40,26 +40,24 @@
       if (diskMatch) result.values.disk = diskMatch[1].trim();
       const ramMatch = fText.match(/(?:At least\s*)?([0-9]+\s*GB)[^.\n;]*RAM/i);
       if (ramMatch) result.values.ram = ramMatch[1].trim();
-      const timeMatch = fText.match(/Installation takes[^:]*:\s*([^\n;]+)/i);
-      if (timeMatch) result.values.installTime = timeMatch[1].trim().replace(/\s*\([^)]*\)/g, "");
+      const timeMatch = fText.match(/(?:\bInstallation takes|\bInstallation time|\bInstall time)(?:\s*\([^)\n]*\))?\s*[:\-]?\s*([^\n;]+)/i);
+      if (timeMatch) {
+        const cleaned = timeMatch[1].replace(/\s*\([^)]*\)/g, "").replace(/[.;]+$/, "").trim();
+        result.values.installTime = (cleaned || timeMatch[1].replace(/[.;]+$/, "")).trim();
+      }
     }
 
     return result;
   }
 
-  // Build the neutral "Cover unavailable" SVG block shown while/if artwork is missing.
+  // Build the bundled cover shown while artwork loads and whenever every source fails.
   function placeholder() {
     const fallback = document.createElement("span");
     fallback.className = "mfg-cover-placeholder";
     fallback.setAttribute("aria-hidden", "true");
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.setAttribute("viewBox", "0 0 64 48");
-    const path = document.createElementNS(icon.namespaceURI, "path");
-    path.setAttribute("d", "M23 12h18c8 0 12 6 14 14l3 12c1 5-5 8-8 4L39 32H25L14 42c-3 4-9 1-8-4l3-12c2-8 6-14 14-14ZM19 19v12m-6-6h12m17-3h.1m6 6h.1M27 12l3-6h10");
-    icon.append(path);
-    const text = document.createElement("span");
-    text.textContent = "Cover unavailable";
-    fallback.append(icon, text);
+    try {
+      fallback.style.backgroundImage = `url("${chrome.runtime.getURL("assets/cover-unavailable.png")}")`;
+    } catch { /* The frame's background colour remains if the extension is unloading. */ }
     return fallback;
   }
 
@@ -107,13 +105,16 @@
     t = t.replace(/[\s,–—-]+(?:\b(?:v\.?|ver\.?|version)\s*\d|\bbuild\s*\d|\bpatch\s*\d|\bhotfix\s*\d|\bseason\s*\d|\bact\s+[ivx\d]+|\bupdate\s*\d|\b(?:early\s+access\s+)?v\d|\b(?:release|denuvoless)\b).*$/i, ' ');
 
     // Cut off "+ <anything>" (e.g. "+ 103 DLCs", "+ Bonus Content", "+ All DLCs", "+ Update 2", "+ Windows 7 Fix")
-    t = t.replace(/\s*\+\s*.*$/, ' ');
+    t = t.replace(/\s+\+\s*(?:\d+\s*DLC|all\b|DLC|bonus|soundtrack|OST\b|artbook|update|patch|hotfix|windows|selective|optional|multiplayer|crack|language|fix|REDmod|Mod Tools).*$/i, ' ');
 
     // Strip trailing "Repack Updated", "Repack", etc.
     t = t.replace(/\bRepack(?:\s+Updated)?\b.*$/i, ' ');
 
     // Cut off common edition / bundle noise if at the end
-    t = t.replace(/[:–—-]\s*(?:Game\s*&\s*Soundtrack|Soundtrack\s*(?:Bundle|Edition)|Inflation\s*Edition|Supreme\s*Edition|Complete\s*Edition|Revolution\s*Remaster|All\s*Stars\s*Collection|Anniversary\s*(?:Edition|Update)|Digital\s*Deluxe\s*Edition|Super\s*Deluxe\s*Edition|Deluxe\s*Edition|Ultimate\s*Edition|Definitive\s*Edition|Collector(?:'s)?\s*Edition|Special\s*Edition|Enhanced\s*Edition|Remastered\s*Edition|Standard\s*Edition|Supporter\s*Edition|Game\s*of\s*the\s*Year\s*Edition|GOTY\s*Edition).*$/i, '');
+    t = t.replace(/[:–—-]\s*(?:Game\s*&\s*Soundtrack|Soundtrack\s*(?:Bundle|Edition)|Inflation\s*Edition|Supreme\s*Edition|Complete\s*Edition|Anniversary\s*Update|Digital\s*Deluxe\s*Edition|Super\s*Deluxe\s*Edition|Deluxe\s*Edition|Ultimate\s*Edition|Collector(?:'s)?\s*Edition|Standard\s*Edition|Supporter\s*Edition|Game\s*of\s*the\s*Year\s*Edition|GOTY\s*Edition).*$/i, '');
+
+    // Commercial packages are not different games; preserve remasters and definitive editions.
+    t = t.replace(/(?:\s*[:–—-]\s*|\s+)(?:(?:digital|super)\s+)?(?:ultimate|deluxe|gold|premium|complete|reloaded|standard|collector[’']?s|game\s+of\s+the\s+year|GOTY|supporter)\s+edition\s*$/i, '');
 
     // Strip trailing " & Soundtrack"
     t = t.replace(/\s*&\s*Soundtrack.*$/i, '');
@@ -122,7 +123,7 @@
     t = t.replace(/[™®©]/g, '');
 
     // Strip trailing punctuation
-    t = t.replace(/[\s,:–—\/\-\+]+$/, '');
+    t = t.replace(/[\s,:–—\/\-]+$/, '');
     t = t.replace(/^[\s,:–—\/\-\+]+/, '');
 
     return t.replace(/\s+/g, ' ').trim();
@@ -195,15 +196,18 @@
     box.querySelectorAll(".mfg-cover-spinner").forEach((s) => s.remove());
   }
 
-  // Overlay a small "Steam" / "GOG" / "Original" label showing where the cover came from.
+  // Original site artwork needs no label. Fallback artwork discloses its provider
+  // on hover/focus without permanently competing with the game title or rating.
   function setSourceBadge(box, source) {
     if (!box || !source) return;
     box.querySelector(".mfg-cover-badge")?.remove();
-    const badge = document.createElement("span");
     const s = String(source).toLowerCase();
-    badge.className = `mfg-cover-badge mfg-cover-source-${s}`;
-    badge.textContent = s === "original" ? "Original" : (s === "gog" ? "GOG" : "Steam");
-    badge.title = s === "original" ? "Original cover art" : `Cover from ${badge.textContent}`;
+    if (s === "original") return;
+    const provider = s === "gog" ? "GOG" : "Steam";
+    const badge = document.createElement("span");
+    badge.className = `mfg-cover-badge mfg-cover-source-${provider.toLowerCase()}`;
+    badge.textContent = `Fetched from ${provider}`;
+    badge.title = `Artwork fetched from ${provider}`;
     box.append(badge);
   }
 
@@ -292,16 +296,22 @@
 
     resolveOneGame(query).then((game) => {
       if (!game || !game.rating || !box.isConnected) return;
+      if (!box.classList.contains("mfg-detail-art") && !box.closest(".mfg-game-card")) return;
       if (box.querySelector(".mfg-steam-rating")) return;
 
       const rating = game.rating;
       if (rating.percent === null && !rating.desc) return;
 
-      const badge = document.createElement("a");
+      // Browse artwork is already a link to its game. Use a non-interactive
+      // badge there so we never create nested anchors; detail artwork can link.
+      const linkedArtwork = Boolean(box.closest("a"));
+      const badge = document.createElement(linkedArtwork ? "span" : "a");
       const appid = game.appid;
-      badge.href = appid ? `https://store.steampowered.com/app/${appid}/` : '#';
-      badge.target = "_blank";
-      badge.rel = "noopener noreferrer";
+      if (!linkedArtwork) {
+        badge.href = appid ? `https://store.steampowered.com/app/${appid}/` : '#';
+        badge.target = "_blank";
+        badge.rel = "noopener noreferrer";
+      }
 
       let tier = "positive";
       let icon = "👍";
@@ -324,9 +334,7 @@
       badge.title = `${rating.desc}${percentStr ? `: ${percentStr}` : ''}${totalStr ? ` of ${totalStr} Steam reviews` : ''}`;
       badge.setAttribute("aria-label", `Steam rating: ${percentStr} ${rating.desc}`);
 
-      badge.addEventListener("click", (e) => {
-        e.stopPropagation();
-      });
+      if (!linkedArtwork) badge.addEventListener("click", event => event.stopPropagation());
 
       const iconSpan = document.createElement("span");
       iconSpan.className = "mfg-rating-icon";
@@ -416,6 +424,7 @@
       const item = document.createElement("div");
       const term = document.createElement("dt"); term.textContent = label;
       const value = document.createElement("dd"); value.textContent = (data.values[key] || "Not listed").replace(/\s*\[[^\]]*\]/g, "").trim(); value.title = data.values[key] || "Not listed";
+      value.dataset.mfgField = key; value.dataset.mfgMissing = String(!data.values[key]);
       item.append(term, value); facts.append(item);
     }
     section.append(facts);
@@ -423,6 +432,7 @@
       const languages = document.createElement("p"); languages.className = "mfg-card-languages";
       const label = document.createElement("span"); label.textContent = "Languages";
       const value = document.createElement("span"); value.textContent = data.values.languages || "Not listed";
+      value.dataset.mfgField = "languages"; value.dataset.mfgMissing = String(!data.values.languages);
       languages.append(label, value); section.append(languages);
     }
     const tags = document.createElement("div");
@@ -533,7 +543,8 @@
       changes.push(() => badges.remove());
     }
 
-    // Hero Alert Banner
+    // Hero alert banner. Keep it as a full-width sibling of the title block so
+    // long warnings remain readable on narrow screens.
     const warningRow = data.rows.find(r => !r.key && (/REQUIRES|Win10|Win11|Windows|WARNING|NOTE/i.test(r.text) || r.nodes.some(n => n.nodeType === 1 && (/color:\s*red/i.test(n.getAttribute("style") || "")))));
     if (warningRow) {
       const alert = document.createElement("div");
@@ -547,7 +558,7 @@
       text.className = "mfg-alert-text";
       text.append(richValue(warningRow));
       alert.append(icon, text);
-      heroContent.append(alert);
+      heroMain.after(alert);
       changes.push(() => alert.remove());
     }
 
@@ -585,7 +596,9 @@
               tItem.append(tLabel, tVal); facts.append(tItem);
             }
           }
-        } else {
+        } else if (row !== warningRow) {
+          // The primary warning is already surfaced directly below the title.
+          // Avoid repeating it in the information grid.
           const note = document.createElement("div"); note.className = "mfg-info-note";
           const term = document.createElement("dt"); term.className = "screen-reader-text"; term.textContent = "Repack note";
           const value = document.createElement("dd"); value.append(richValue(row)); note.append(term, value); facts.append(note);
@@ -985,14 +998,14 @@
       const btnAll = document.createElement("button");
       btnAll.type = "button";
       btnAll.className = "mfg-seg-btn";
-      btnAll.setAttribute("aria-pressed", "false");
+      btnAll.setAttribute("aria-pressed", "true");
       btnAll.dataset.src = "all";
       btnAll.textContent = "All sources";
 
       const btnDirect = document.createElement("button");
       btnDirect.type = "button";
       btnDirect.className = "mfg-seg-btn";
-      btnDirect.setAttribute("aria-pressed", "true");
+      btnDirect.setAttribute("aria-pressed", "false");
       btnDirect.dataset.src = "direct";
       btnDirect.textContent = "Direct links";
 
@@ -1011,7 +1024,7 @@
       directWrap.className = "mfg-direct-sources";
       const torrentWrap = document.createElement("div");
       torrentWrap.className = "mfg-torrent-sources";
-      torrentWrap.hidden = true;
+      torrentWrap.hidden = false;
 
       let inTorrent = false;
       for (const node of dlNodes) {
@@ -1034,6 +1047,7 @@
       btnAll.addEventListener("click", () => filterSources("all"));
       btnDirect.addEventListener("click", () => filterSources("direct"));
       btnTorrent.addEventListener("click", () => filterSources("torrent"));
+      filterSources("all");
 
       tabPanels.push({ id: "mfg-tab-dl", label: "Download", panel: panelDl });
     }

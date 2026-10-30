@@ -83,6 +83,22 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('https://fitgirl-repacks.site/');
     await page.locator('.mfg-browse-sidebar').waitFor(); await page.locator('.mfg-promo-sidebar').waitFor();
+    await page.locator('.mfg-footer-shell').waitFor();
+    const fallbackArtwork = await page.locator('.mfg-cover-placeholder').first().evaluate(async node => {
+      const background = getComputedStyle(node).backgroundImage;
+      const url = background.match(/^url\(["']?(.*?)["']?\)$/)?.[1];
+      if (!url) return { background, width: 0, height: 0 };
+      const image = new Image();
+      const loaded = new Promise(resolve => {
+        image.addEventListener('load', () => resolve(true), { once: true });
+        image.addEventListener('error', () => resolve(false), { once: true });
+      });
+      image.src = url;
+      await loaded;
+      return { background, width: image.naturalWidth, height: image.naturalHeight };
+    });
+    assert.match(fallbackArtwork.background, /chrome-extension:\/\/.*\/assets\/cover-unavailable\.png/, 'Missing covers do not use the bundled fallback');
+    assert.deepEqual([fallbackArtwork.width, fallbackArtwork.height], [1024, 1536], 'Bundled fallback artwork did not load');
     await page.waitForFunction(() => document.querySelector('.mfg-site-logo')?.naturalWidth === 225);
     const fonts = await page.evaluate(async () => {
       const faces = await Promise.all([document.fonts.load('500 16px "MFG Inter"'), document.fonts.load('600 16px "MFG Manrope"')]);
@@ -93,19 +109,18 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
     assert.equal(await page.locator('.mfg-library-nav, .mfg-save, .mfg-detail-nav').count(), 0);
     const popup = await context.newPage(); await popup.goto(`chrome-extension://${installed.id}/popup.html`);
     assert.equal(await popup.locator('a[href="library.html"]').count(), 0);
+    assert.equal(await popup.locator('#view').count(), 0, 'Removed layout preference remains in the popup');
     await popup.locator('#enabled').uncheck(); await page.locator('html:not(.mfg-on)').waitFor();
     assert.equal(await page.locator('.mfg-browse-sidebar, .mfg-promo-sidebar, .mfg-cover').count(), 0);
     await popup.locator('#enabled').check(); await page.locator('.mfg-browse-sidebar').waitFor();
-    await popup.locator('#view').selectOption('list'); await page.reload();
-    await page.locator('html[data-mfg-view="list"] .mfg-game').first().waitFor();
-    await popup.locator('#view').selectOption('grid');
+    assert.equal(await page.locator('.mfg-view-controls, .mfg-view-button').count(), 0, 'Removed listing layout controls remain on the page');
     await page.goto('https://fitgirl-repacks.site/page/2/');
     const next = page.locator('.paging-navigation a.next'); const nextURL = await next.getAttribute('href');
     await Promise.all([page.waitForURL(nextURL), next.click()]);
     await page.locator('.mfg-browse-sidebar').waitFor(); assert.equal(new URL(page.url()).pathname, '/page/3/');
     await page.goto('https://fitgirl-repacks.site/cyberpunk-2077/');
     await page.locator('.mfg-game-info').waitFor(); assert.equal(await page.locator('.mfg-detail-nav').count(), 0);
-    assert((await page.locator('.mfg-game-info').innerText()).includes('REQUIRES Win10/11'));
+    assert((await page.locator('.mfg-detail-alert').innerText()).includes('REQUIRES Win10/11'));
     assert.equal(await page.locator('.mfg-comments:not([open])').count(), 1, 'Comments must start closed');
     const widgetURL = 'https://web.tolstoycomments.com/widget/index.html?x=6289&p=' + encodeURIComponent('https://fitgirl-repacks.site/cyberpunk-2077/');
     await page.locator('.mfg-comments .tolstoycomments-feed').first().evaluate((node, url) => {
@@ -114,7 +129,7 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
     const commentFrame = page.frameLocator('#mfg-test-comments');
     await commentFrame.locator('html.mfg-comments-on').waitFor({ state: 'attached' });
     await page.locator('.mfg-comments > summary').click();
-    assert.equal(await commentFrame.locator('body').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(0, 0, 0)', 'Comments frame remains white');
+    assert.equal(await commentFrame.locator('body').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(16, 16, 15)', 'Comments frame remains white');
     await page.locator('.mfg-comments > summary').click();
     await popup.locator('#enabled').uncheck();
     await commentFrame.locator('html:not(.mfg-comments-on)').waitFor({ state: 'attached' });
@@ -147,6 +162,6 @@ const extension = fs.existsSync(path.resolve(__dirname, '../pretty-fitgirl')) ? 
     assert(await page.locator('.mfg-browse-sidebar').isVisible(), 'Mobile Browse did not open');
     await page.keyboard.press('Escape'); assert(!(await page.locator('.mfg-browse-sidebar').isVisible()), 'Escape did not close mobile Browse');
     assert.deepEqual(errors, [], 'Extension introduced a page error');
-    console.log('PASS: real MV3 injection, fonts, two sidebars, single navigation, mobile Browse, collapsed/themed comments frame, frame scope, theme restoration, digest filtering, pagination, lazy artwork/cache, and narrow layout.');
+    console.log('PASS: real MV3 injection, fonts, focused navigation, structured footer, mobile Browse, collapsed/themed comments frame, frame scope, theme restoration, digest filtering, pagination, lazy artwork/cache, and narrow layout.');
   } finally { await context.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
